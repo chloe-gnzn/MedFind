@@ -8,4 +8,4 @@ def landing_view(request):
     # anyone already logged in goes straight to their own home screen
     if get_account(request):
         return redirect(ROLE_HOME[request.session[SESSION_ROLE]])
-    return render(request, 'landing_app/landing.html')
+    return render(request, 'landing_template/landing.html')

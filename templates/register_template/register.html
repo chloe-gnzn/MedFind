@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MedFind | Register</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@600&family=Alexandria:wght@300;400;700&family=Lalezar&display=swap" rel="stylesheet">
+    {# login.css = shared look (card, inputs, button); register.css = register-only layout #}
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/register.css' %}">
+</head>
+<body class="login-page register-page">
+
+    <div class="login-art" aria-hidden="true">
+        <img class="login-bg" src="{% static 'login_register/pharmacy.png' %}" alt=""
+             onerror="this.style.display='none'">
+        <img class="login-doctor" src="{% static 'login_register/doctor.png' %}" alt=""
+             onerror="this.style.display='none'">
+    </div>
+
+    <main class="login-card">
+        <div class="login-card-inner">
+
+            <h1 class="login-title">Register</h1>
+
+            <div class="login-logo" aria-label="MedFind+">MedFind<span class="plus">+</span></div>
+            {% if kind == 'pharmacy' %}<p class="login-role">{{ title }}</p>{% endif %}
+
+            {% if messages %}
+            <ul class="login-messages" role="status">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <form class="login-form" method="post" novalidate>
+                {% csrf_token %}
+
+                {% for field in form %}
+                <div class="login-field">
+                    <label class="login-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.name == 'password1' %}
+                        <div class="login-help">At least 8 characters. Avoid common passwords.</div>
+                    {% endif %}
+                    {% if field.errors %}
+                        <ul class="login-errors">
+                            {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {% if form.non_field_errors %}
+                    <ul class="login-errors general">
+                        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+
+                <div class="login-submit-row">
+                    <button type="submit" class="login-btn">Sign Up</button>
+                </div>
+            </form>
+
+            <div class="login-divider">Already have an account?</div>
+            <p class="login-register">
+                <a href="{% if kind == 'pharmacy' %}{% url 'pharmacy_login' %}{% else %}{% url 'login' %}{% endif %}">Log in here!</a>
+            </p>
+
+        </div>
+    </main>
+
+</body>
+</html>

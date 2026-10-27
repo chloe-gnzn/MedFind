@@ -24,7 +24,7 @@ def dashboard_view(request):
         'hours_set': OperatingHours.objects.filter(pharmacy=pharmacy).count(),
         'latest_verification': pharmacy.verifications.first(),
     }
-    return render(request, 'pharmacy_app/dashboard.html', context)
+    return render(request, 'pharmacy_template/dashboard.html', context)
 
 
 #Inventory
@@ -34,7 +34,7 @@ def inventory_list_view(request):
     items = (Inventory.objects.filter(pharmacy=request.account)
              .select_related('medicine', 'medicine__category')
              .order_by('medicine__medicine_name'))
-    return render(request, 'pharmacy_app/inventory.html', {'items': items})
+    return render(request, 'pharmacy_template/inventory.html', {'items': items})
 
 
 @role_required('pharmacy')
@@ -51,7 +51,7 @@ def inventory_add_view(request):
             return redirect('pharmacy_inventory')
     else:
         form = InventoryForm(pharmacy=request.account)
-    return render(request, 'pharmacy_app/inventory_form.html', {'form': form, 'mode': 'Add'})
+    return render(request, 'pharmacy_template/inventory_form.html', {'form': form, 'mode': 'Add'})
 
 
 @role_required('pharmacy')
@@ -67,7 +67,7 @@ def inventory_edit_view(request, inventory_id):
             return redirect('pharmacy_inventory')
     else:
         form = InventoryForm(instance=item)
-    return render(request, 'pharmacy_app/inventory_form.html', {'form': form, 'mode': 'Edit'})
+    return render(request, 'pharmacy_template/inventory_form.html', {'form': form, 'mode': 'Edit'})
 
 
 @role_required('pharmacy')
@@ -137,7 +137,7 @@ def hours_view(request):
     else:
         rows = _hours_rows(pharmacy)
 
-    return render(request, 'pharmacy_app/hours.html', {'rows': rows})
+    return render(request, 'pharmacy_template/hours.html', {'rows': rows})
 
 
 #Verification
@@ -172,7 +172,7 @@ def verification_view(request):
     else:
         form = VerificationUploadForm()
 
-    return render(request, 'pharmacy_app/verification.html', {
+    return render(request, 'pharmacy_template/verification.html', {
         'form': form,
         'submissions': submissions,
         'has_pending': has_pending,

@@ -9,14 +9,12 @@ from medfind_project.session_auth import (
 from .forms import LoginForm
 from .utils import log_activity
 
-# What each login page looks like. Only the user page links to registration;
-# the admin page has none (admins are created with `manage.py create_admin`).
 LOGIN_PAGES = {
     'user': {
         'heading': 'Log in to your account',
         'register_url': 'register',
-        'register_text': "Don't have an account?",
-        'register_label': 'Register now',
+        'register_text': "Don’t have an account?",
+        'register_label': 'Register Now!',
         'other_url': 'pharmacy_login',
         'other_text': 'Own a pharmacy?',
         'other_label': 'Go to the pharmacy portal',
@@ -52,7 +50,7 @@ def _login(request, role):
     else:
         form = LoginForm(role=role)
 
-    return render(request, 'login_app/login.html', {
+    return render(request, 'login_template/login.html', {
         'form': form,
         'role': role,
         'page': LOGIN_PAGES[role],

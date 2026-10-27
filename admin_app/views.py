@@ -15,7 +15,7 @@ from .models import ActivityLog, Admin
 
 @role_required('admin')
 def dashboard_view(request):
-    return render(request, 'admin_app/dashboard.html', {
+    return render(request, 'admin_template/dashboard.html', {
         'user_count': User.objects.count(),
         'pharmacy_count': Pharmacy.objects.count(),
         'pending_count': PharmacyVerification.objects.filter(status='pending').count(),

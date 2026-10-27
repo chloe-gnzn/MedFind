@@ -1,0 +1,87 @@
+.register-page .login-card { max-width: 487px; }
+
+.register-page .login-card-inner {
+  min-height: 0;
+  padding: 21px 24px 24px;
+}
+
+.register-page .login-logo { margin-top: 20px; }
+
+/* form */
+.register-page .login-form {
+  max-width: 284px;
+  margin-top: 16px;
+}
+
+.register-page .login-field + .login-field { margin-top: 12px; }
+
+.register-page .login-label {
+  margin-bottom: 6px;
+  padding-left: 10px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.register-page .login-input {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 12px;
+  /* softer inset to suit the shorter field */
+  box-shadow:
+    5px 5px 9px rgba(184, 190, 204, 0.45) inset,
+    -5px -5px 9px rgba(255, 255, 255, 0.95) inset;
+}
+.register-page .login-input:focus {
+  box-shadow:
+    5px 5px 9px rgba(184, 190, 204, 0.45) inset,
+    -5px -5px 9px rgba(255, 255, 255, 0.95) inset,
+    0 0 0 2px rgba(117, 130, 191, 0.55);
+}
+
+.login-help {
+  margin: 4px 0 0 10px;
+  font-size: 10px;
+  font-weight: 300;
+  color: var(--lg-muted);
+}
+
+/* ---------- "Sign Up" button: 169 Ã— 38, 20px text ---------- */
+.register-page .login-submit-row { margin-top: 20px; }
+.register-page .login-btn {
+  width: 169px;
+  height: 38px;
+  font-size: 20px;
+  border-radius: 40px;
+}
+
+/* ---------- Divider + link ---------- */
+.register-page .login-divider {
+  margin-top: 16px;
+  max-width: 284px;
+}
+.register-page .login-divider::before,
+.register-page .login-divider::after { flex-basis: 36px; }
+.register-page .login-register { margin-top: 6px; }
+
+/* ---------- Doctor: a touch larger than on Login, flush to the bottom ---------- */
+.register-page .login-doctor {
+  height: 556px;
+  bottom: -90px;
+  left: calc(50% + 143px);
+}
+
+@media (max-width: 1100px) {
+  .register-page .login-doctor { height: 460px; bottom: -75px; left: calc(50% + 120px); }
+}
+@media (max-width: 900px) {
+  .register-page .login-doctor { display: none; }
+}
+@media (max-width: 480px) {
+  .register-page .login-card-inner { padding: 20px 16px 22px; }
+  .register-page .login-divider::before,
+  .register-page .login-divider::after { flex-basis: 20px; }
+}
+
+/* line error messages up with the label text */
+.register-page .login-errors { margin-left: 10px; }
+.register-page .login-errors.general { margin-left: 0; }

@@ -12,7 +12,6 @@ from pharmacy_app.utils import open_now_map
 
 from .models import Favorite, Medicine, MedicineCategory, SearchHistory
 
-# a pharmacy only shows up for customers once an admin has approved it
 VISIBLE_PHARMACY = {'pharmacy__verification_status': 'approved', 'pharmacy__is_active': True}
 
 
@@ -25,7 +24,7 @@ def home_view(request):
         'pharmacy_count': Pharmacy.objects.filter(verification_status='approved', is_active=True).count(),
         'medicine_count': Medicine.objects.count(),
     }
-    return render(request, 'home_app/home.html', context)
+    return render(request, 'home_template/home.html', context)
 
 
 @role_required('user')
@@ -57,7 +56,7 @@ def search_view(request):
         if last is None or last.search_term.lower() != q.lower():
             SearchHistory.objects.create(user=request.account, search_term=q[:255])
 
-    return render(request, 'home_app/search.html', {
+    return render(request, 'home_template/search.html', {
         'q': q,
         'category_id': category_id,
         'categories': MedicineCategory.objects.all(),
@@ -77,7 +76,7 @@ def medicine_detail_view(request, medicine_id):
     for listing in listings:
         listing.open_now = open_map[listing.pharmacy_id]
 
-    return render(request, 'home_app/medicine_detail.html', {
+    return render(request, 'home_template/medicine_detail.html', {
         'medicine': medicine,
         'listings': listings,
         'is_favorite': Favorite.objects.filter(
@@ -94,7 +93,7 @@ def pharmacy_detail_view(request, pharmacy_id):
     items = (Inventory.objects.filter(pharmacy=pharmacy)
              .select_related('medicine').order_by('medicine__medicine_name'))
 
-    return render(request, 'home_app/pharmacy_detail.html', {
+    return render(request, 'home_template/pharmacy_detail.html', {
         'pharmacy': pharmacy,
         'hour_rows': hour_rows,
         'items': items,
@@ -108,7 +107,7 @@ def pharmacy_detail_view(request, pharmacy_id):
 def favorites_view(request):
     favorites = Favorite.objects.filter(user=request.account).select_related(
         'medicine', 'medicine__category', 'pharmacy')
-    return render(request, 'home_app/favorites.html', {
+    return render(request, 'home_template/favorites.html', {
         'medicine_favs': [f for f in favorites if f.favorite_type == 'medicine' and f.medicine],
         'pharmacy_favs': [f for f in favorites if f.favorite_type == 'pharmacy' and f.pharmacy],
     })
@@ -145,7 +144,7 @@ def toggle_favorite_view(request, kind, obj_id):
 
 @role_required('user')
 def history_view(request):
-    return render(request, 'home_app/history.html', {
+    return render(request, 'home_template/history.html', {
         'searches': SearchHistory.objects.filter(user=request.account)[:50],
     })
 

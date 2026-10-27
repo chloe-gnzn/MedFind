@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MedFind | Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@600&family=Alexandria:wght@300;400;700&family=Lalezar&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body class="login-page">
+
+    <img class="login-bg" src="{% static 'login_register/pharmacy.png' %}" alt="" aria-hidden="true"
+         onerror="this.style.display='none'">
+
+    <main class="login-card">
+        <div class="login-card-inner">
+
+            <h1 class="login-title">Log In</h1>
+
+            <div class="login-logo" aria-label="MedFind+">MedFind<span class="plus">+</span></div>
+            {% if role != 'user' %}<p class="login-role">{{ page.heading }}</p>{% endif %}
+
+            {% if messages %}
+            <ul class="login-messages" role="status">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <form class="login-form" method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="login-field">
+                    <label class="login-label" for="{{ form.email.id_for_label }}">Enter Email/Phone No.:</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <ul class="login-errors">
+                            {% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="login-field">
+                    <label class="login-label" for="{{ form.password.id_for_label }}">Enter Password:</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <ul class="login-errors">
+                            {% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}
+                        </ul>
+                    {% endif %}
+                    {# TODO: point this at your password-reset URL once it exists #}
+                    <a class="login-forgot" href="#">Forgot Password?</a>
+                </div>
+
+                {% if form.non_field_errors %}
+                    <ul class="login-errors general">
+                        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+
+                <div class="login-submit-row">
+                    <button type="submit" class="login-btn">Log In</button>
+                </div>
+            </form>
+
+            {% if page.register_url %}
+            <div class="login-divider">{{ page.register_text }}</div>
+            <p class="login-register"><a href="{% url page.register_url %}">{{ page.register_label }}</a></p>
+            {% endif %}
+
+            {% if page.other_url %}
+            <p class="login-other">{{ page.other_text }} <a href="{% url page.other_url %}">{{ page.other_label }}</a></p>
+            {% endif %}
+
+        </div>
+    </main>
+
+    {# ASSET 2 — pharmacist (Figma "image 10") → static/login/doctor.png #}
+    <img class="login-doctor" src="{% static 'login_register/doctor.png' %}" alt="" aria-hidden="true"
+         onerror="this.style.display='none'">
+
+</body>
+</html>

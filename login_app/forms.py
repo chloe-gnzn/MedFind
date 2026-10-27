@@ -8,15 +8,17 @@ class LoginForm(forms.Form):
 
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'you@example.com',
+            'class': 'login-input',
+            'placeholder': 'email/phone no.',
+            'autocomplete': 'username',
             'autofocus': True,
         }),
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Enter your password',
+            'class': 'login-input',
+            'placeholder': 'password',
+            'autocomplete': 'current-password',
         }),
     )
 

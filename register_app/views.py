@@ -23,7 +23,7 @@ def register_view(request):
     else:
         form = UserRegisterForm()
 
-    return render(request, 'register_app/register.html', {
+    return render(request, 'register_template/register.html', {
         'form': form,
         'title': 'Create your account',
         'kind': 'user',
@@ -50,7 +50,7 @@ def register_pharmacy_view(request):
     else:
         form = PharmacyRegisterForm()
 
-    return render(request, 'register_app/register.html', {
+    return render(request, 'register_template/register.html', {
         'form': form,
         'title': 'Register your pharmacy',
         'kind': 'pharmacy',

@@ -1,0 +1,333 @@
+:root {
+  --lg-bg: #D7D7D7;
+  --lg-surface: #E8E8E8;
+  --lg-surface-inner: #D9D9D9;
+  --lg-navy: #212F68;
+  --lg-navy-deep: #1B2764;
+  --lg-accent: #7582BF;
+  --lg-muted: #A8A8AB;
+  --lg-terracotta: #C36257;
+  --lg-ring: #EEF4F6;
+}
+
+.login-page,
+.login-page *,
+.login-page *::before,
+.login-page *::after {
+  box-sizing: border-box;
+}
+
+.login-page {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: var(--lg-bg);
+  font-family: 'Alexandria', 'Segoe UI', Arial, sans-serif;
+  color: var(--lg-navy);
+}
+
+/* Clips the artwork to the page without stopping the page from scrolling
+   on short screens (no z-index on purpose: the doctor must sit above the card). */
+.login-art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ---------- Background artwork (pharmacy storefront) ---------- */
+.login-bg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1065px, 100%);
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---------- Doctor (image 10) â€” overlaps the card's lower-right ---------- */
+.login-doctor {
+  position: absolute;
+  z-index: 3;
+  bottom: -84px;
+  left: calc(50% + 102px);
+  height: 530px;
+  width: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---------- Card: outer raised shell ---------- */
+.login-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 507px;
+  padding: 13px 16px;
+  background: var(--lg-surface);
+  border-radius: 24px;
+  box-shadow:
+    22px 22px 44px rgba(195, 195, 195, 0.25),
+    -22px -22px 44px rgba(255, 255, 255, 0.25);
+}
+
+/* ---------- Card: inner recessed panel ---------- */
+.login-card-inner {
+  position: relative;
+  min-height: 543px;
+  padding: 21px 24px 28px;
+  background: var(--lg-surface-inner);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 24px;
+  box-shadow:
+    3px 3px 44px rgba(195, 195, 195, 0.18) inset,
+    3px 3px 9px #fff inset;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-title {
+  align-self: flex-start;
+  margin: 0 0 0 4px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--lg-navy);
+}
+
+/* ---------- Logo ---------- */
+.login-logo {
+  margin: 14px 0 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  font-family: 'Lalezar', 'Alexandria', sans-serif;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--lg-navy-deep);
+  font-size: 50px;
+}
+.login-logo .plus {
+  font-size: 70px;
+  line-height: 0;
+  color: var(--lg-accent);
+  margin-left: 2px;
+}
+
+.login-role {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lg-accent);
+}
+
+/* ---------- Flash messages ---------- */
+.login-messages {
+  list-style: none;
+  width: 100%;
+  max-width: 290px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.login-messages li {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 400;
+  text-align: center;
+  background: var(--lg-surface-inner);
+  box-shadow:
+    4px 4px 8px rgba(184, 190, 204, 0.45),
+    -4px -4px 8px rgba(255, 255, 255, 0.9);
+  color: var(--lg-navy);
+}
+.login-messages li.success { color: #2f6b4f; }
+.login-messages li.error   { color: var(--lg-terracotta); }
+
+/* ---------- Form ---------- */
+.login-form {
+  width: 100%;
+  max-width: 290px;
+  margin-top: 28px;
+}
+
+.login-field + .login-field { margin-top: 22px; }
+
+.login-label {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--lg-navy);
+}
+
+/* Neumorphic inset input */
+.login-input {
+  display: block;
+  width: 100%;
+  height: 46px;
+  padding: 0 16px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--lg-navy);
+  background: var(--lg-surface-inner);
+  border: 0;
+  border-radius: 12px;
+  outline: none;
+  box-shadow:
+    6px 6px 10px rgba(184, 190, 204, 0.45) inset,
+    -6px -6px 10px rgba(255, 255, 255, 0.95) inset;
+  transition: box-shadow 0.2s ease;
+}
+.login-input::placeholder {
+  font-weight: 300;
+  color: var(--lg-muted);
+  opacity: 1;
+}
+.login-input:focus {
+  box-shadow:
+    6px 6px 10px rgba(184, 190, 204, 0.45) inset,
+    -6px -6px 10px rgba(255, 255, 255, 0.95) inset,
+    0 0 0 2px rgba(117, 130, 191, 0.55);
+}
+
+.login-errors {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--lg-terracotta);
+}
+.login-errors.general { text-align: center; margin-top: 14px; font-size: 12px; }
+
+.login-forgot {
+  display: block;
+  width: fit-content;
+  margin: 8px 0 0 auto;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--lg-navy);
+  text-decoration: underline;
+}
+.login-forgot:hover { color: var(--lg-accent); }
+
+/* ---------- Primary button ---------- */
+.login-submit-row { display: flex; justify-content: center; margin-top: 22px; }
+
+.login-btn {
+  width: 181px;
+  height: 46px;
+  font-family: '42dot Sans', 'Alexandria', sans-serif;
+  font-size: 25px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(180deg, #172B51 0%, #7689AC 100%);
+  border: 3px solid var(--lg-ring);
+  border-radius: 44px;
+  box-shadow: 5px 5px 8.8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.login-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 6px 8px 12px rgba(0, 0, 0, 0.28);
+}
+.login-btn:active {
+  transform: translateY(1px);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+.login-btn:focus-visible,
+.login-forgot:focus-visible,
+.login-register a:focus-visible {
+  outline: 2px solid var(--lg-accent);
+  outline-offset: 3px;
+}
+
+/* ---------- "Don't have an account?" ---------- */
+.login-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 290px;
+  margin-top: 30px;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--lg-navy);
+  white-space: nowrap;
+}
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 0 0 46px;
+  height: 1px;
+  background: var(--lg-navy-deep);
+}
+
+.login-register {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 400;
+}
+.login-register a {
+  color: var(--lg-terracotta);
+  text-decoration: underline;
+}
+.login-register a:hover { filter: brightness(0.9); }
+
+.login-other {
+  margin: 14px 0 0;
+  max-width: 290px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--lg-navy);
+}
+.login-other a { color: var(--lg-accent); font-weight: 400; text-decoration: underline; }
+.login-other a:hover { color: var(--lg-navy); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  /* narrower screens: keep the doctor but tuck her closer to the card */
+  .login-doctor { height: 440px; bottom: -70px; left: calc(50% + 90px); }
+}
+
+@media (max-width: 900px) {
+  /* not enough room beside the card â€” drop the illustration */
+  .login-doctor { display: none; }
+  .login-bg { width: 100%; opacity: 0.6; }
+}
+
+@media (max-width: 480px) {
+  .login-card { padding: 10px 10px; border-radius: 20px; }
+  .login-card-inner { padding: 20px 16px 24px; border-radius: 20px; min-height: 0; }
+  .login-title { font-size: 24px; }
+  .login-logo { font-size: 42px; }
+  .login-logo .plus { font-size: 58px; }
+  .login-divider { font-size: 13px; }
+  .login-divider::before, .login-divider::after { flex-basis: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-input, .login-btn { transition: none; }
+}
