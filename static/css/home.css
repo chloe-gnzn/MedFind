@@ -107,9 +107,17 @@ html { background: var(--hm-bg); }
 .home-welcome .name { color: var(--hm-accent); }
 
 /* Neumorphic inset search (same recipe as .login-input) */
-.home-search { flex: 0 1 420px; margin-left: auto; }
+.home-search {
+  flex: 0 1 500px;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 .home-search-input {
   display: block;
+  flex: 1 1 auto;
+  min-width: 0;
   width: 100%;
   height: 36px;
   padding: 0 18px;
@@ -133,6 +141,27 @@ html { background: var(--hm-bg); }
     -4px -4px 8px rgba(255, 255, 255, 0.95) inset,
     0 0 0 2px rgba(117, 130, 191, 0.55);
 }
+
+/* Search button (same recipe as Check Stocks / .login-btn) */
+.home-search-btn {
+  flex: 0 0 auto;
+  height: 30px;
+  padding: 0 18px;
+  font-family: '42dot Sans', 'Alexandria', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  cursor: pointer;
+  background: #172B51 100%;
+  border: 0px solid var(--hm-ring);
+  border-radius: 44px;
+  box-shadow: 4px 4px 7px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.home-search-btn:hover { transform: translateY(-1px); filter: brightness(1.08); box-shadow: 5px 7px 10px rgba(0, 0, 0, 0.28); }
+.home-search-btn:active { transform: translateY(1px); box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+.home-search-btn:focus-visible { outline: 2px solid var(--hm-accent); outline-offset: 3px; }
 
 /* ---------- Profile button + menu ---------- */
 .home-profile { position: relative; margin-left: auto; }
@@ -272,8 +301,8 @@ html { background: var(--hm-bg); }
   background: var(--hm-surface);
   border-radius: 24px;
   box-shadow:
-        22px 22px 44px rgba(195, 195, 195, 0.25),
-    -22px -22px 44px rgba(255, 255, 255, 0.25);
+    12px 12px 28px rgba(195, 195, 195, 0.45),
+    -12px -12px 28px rgba(255, 255, 255, 0.6);
 }
 .ph-card-inner {
   flex: 1 1 auto;              /* stretch to the shell -> equal margins on every card */
@@ -376,5 +405,5 @@ html { background: var(--hm-bg); }
   .home-scroll { padding: 16px 14px 20px 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .home-search-input, .ph-btn, .home-profile summary, .home-nav-links a { transition: none; }
+  .home-search-input, .home-search-btn, .ph-btn, .home-profile summary, .home-nav-links a { transition: none; }
 }
