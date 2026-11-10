@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
@@ -15,16 +16,56 @@ from .models import Favorite, Medicine, MedicineCategory, SearchHistory
 VISIBLE_PHARMACY = {'pharmacy__verification_status': 'approved', 'pharmacy__is_active': True}
 
 
+def _short_time(t):
+    """time(8, 0) -> '8AM', time(20, 30) -> '8:30PM' (matches the Figma card)."""
+    hour = t.hour % 12 or 12
+    suffix = 'AM' if t.hour < 12 else 'PM'
+    return f'{hour}{suffix}' if t.minute == 0 else f'{hour}:{t.minute:02d}{suffix}'
+
+
+# Demo cards shown only while there are no approved pharmacies in the database.
+# They disappear automatically once real pharmacies exist.
+PLACEHOLDER_PHARMACIES = [
+    {'business_name': 'Rosepharmacy', 'address': 'Circo Centrum Building, Fuente Osmena Circle, Cebu City',
+     'open_now': True, 'hours_text': '8AM - 10PM'},
+    {'business_name': 'Mercury Drug', 'address': 'Osmena Boulevard, Capitol Site, Cebu City',
+     'open_now': True, 'hours_text': '24 hours'},
+    {'business_name': 'Watsons Pharmacy', 'address': 'Ayala Center Cebu, Cebu Business Park, Cebu City',
+     'open_now': False, 'hours_text': '10AM - 9PM'},
+    {'business_name': 'Generika Drugstore', 'address': 'Jones Avenue, Cebu City',
+     'open_now': True, 'hours_text': '7AM - 9PM'},
+    {'business_name': 'South Star Drug', 'address': 'Colon Street, Cebu City',
+     'open_now': None, 'hours_text': ''},
+    {'business_name': 'Rose Pharmacy IT Park', 'address': 'Lahug, Cebu IT Park, Cebu City',
+     'open_now': True, 'hours_text': '8AM - 10PM'},
+]
+
+
 @role_required('user')
 def home_view(request):
-    context = {
-        'categories': MedicineCategory.objects.annotate(med_count=Count('medicines')),
-        'recent_searches': SearchHistory.objects.filter(user=request.account)[:5],
-        'favorite_count': Favorite.objects.filter(user=request.account).count(),
-        'pharmacy_count': Pharmacy.objects.filter(verification_status='approved', is_active=True).count(),
-        'medicine_count': Medicine.objects.count(),
-    }
-    return render(request, 'home_template/home.html', context)
+    pharmacies = list(Pharmacy.objects.filter(verification_status='approved', is_active=True))
+    ids = [p.pk for p in pharmacies]
+
+    open_map = open_now_map(ids)
+    today = {h.pharmacy_id: h for h in OperatingHours.objects.filter(
+        pharmacy_id__in=ids, days_of_week=timezone.localtime().weekday())}
+
+    for p in pharmacies:
+        p.open_now = open_map[p.pk]            # True / False / None (hours not set)
+        h = today.get(p.pk)
+        if h and not h.is_closed and h.opening_time and h.closing_time:
+            p.hours_text = f'{_short_time(h.opening_time)} - {_short_time(h.closing_time)}'
+        else:
+            p.hours_text = ''
+
+    use_placeholders = not pharmacies
+    if use_placeholders:
+        pharmacies = PLACEHOLDER_PHARMACIES
+
+    return render(request, 'home_template/home.html', {
+        'pharmacies': pharmacies,
+        'use_placeholders': use_placeholders,
+    })
 
 
 @role_required('user')

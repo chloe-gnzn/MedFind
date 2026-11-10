@@ -94,11 +94,11 @@ DATABASES = {
 # quick offline testing). Off by default -- leave it off to use Supabase.
 if config('DJANGO_USE_SQLITE', default=False, cast=bool):
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+}
 
 
 # Password validation
