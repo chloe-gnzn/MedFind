@@ -12,27 +12,39 @@
 </head>
 <body class="home-page">
 
-    <header class="home-header">
-        <h1 class="home-welcome">Welcome, <span class="name">{{ current_account.first_name }}!</span></h1>
+    {# ===== Top navigation bar ===== #}
+    <header class="home-nav">
+        <a class="home-logo" href="{% url 'home' %}" aria-label="MedFind+">MedFind<span class="plus">+</span></a>
 
-        <form class="home-search" method="get" action="{% url 'search' %}" role="search">
-            <input class="home-search-input" type="text" name="q"
-                   placeholder="Search Pharmacy/Medicine" aria-label="Search pharmacy or medicine">
-        </form>
+        <nav class="home-nav-links" aria-label="Main">
+            <a href="{% url 'home' %}" class="active" aria-current="page">Home</a>
+            <a href="{% url 'favorites' %}">Favorites</a>
+            <a href="{% url 'history' %}">History</a>
+        </nav>
 
-        {# Profile button (opens a small menu: Favorites / History / Log Out) #}
+        {# Profile button (menu: Log Out) #}
         <details class="home-profile">
             <summary aria-label="Account menu">
                 {# ASSET 1 - Figma "image 15" -> static/home/icon-profile.png (colored in home.css via mask) #}
                 <span class="mask-icon home-profile-icon" aria-hidden="true"></span>
             </summary>
             <nav class="home-profile-menu">
-                <a href="{% url 'favorites' %}">Favorites</a>
-                <a href="{% url 'history' %}">History</a>
                 <a href="{% url 'logout' %}" class="logout">Log Out</a>
             </nav>
         </details>
     </header>
+
+    <div class="home-shell">
+
+    {# ===== Welcome + search row ===== #}
+    <div class="home-top">
+        <h1 class="home-welcome">Welcome, <span class="name">{{ current_account.first_name }}!</span></h1>
+
+        <form class="home-search" method="get" action="{% url 'search' %}" role="search">
+            <input class="home-search-input" type="text" name="q"
+                   placeholder="Search Pharmacy/Medicine" aria-label="Search pharmacy or medicine">
+        </form>
+    </div>
 
     {# Rectangle 1: raised outer shell  /  Rectangle 2: recessed inner panel (same as the login card) #}
     <main class="home-panel">
@@ -94,6 +106,8 @@
         </div>
       </div>
     </main>
+
+    </div>{# /.home-shell #}
 
 </body>
 </html>
