@@ -45,7 +45,6 @@ def _login(request, role):
             account = form.account
             login_account(request, role, account)
             log_activity(role, account.pk, 'login', f'{account.email} logged in.')
-            messages.success(request, f'Welcome back, {account.display_name}!')
             return redirect(ROLE_HOME[role])
     else:
         form = LoginForm(role=role)

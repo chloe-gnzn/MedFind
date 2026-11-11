@@ -54,10 +54,11 @@ html { background: var(--hm-bg); }
   text-decoration: none;
 }
 .home-logo .plus {
-  font-size: 42px;
-  line-height: 0;
+  font-size: 36px;
+  line-height: 1;
   color: var(--hm-accent);
   margin-left: 1px;
+  transform: translateY(-2px);
 }
 
 .home-nav-links { display: flex; align-items: center; gap: 26px; }
