@@ -7,10 +7,37 @@ from django.utils.dateparse import parse_time
 from django.views.decorators.http import require_POST
 
 from login_app.utils import log_activity
-from medfind_project.session_auth import role_required
+from medfind_project.session_auth import ROLE_HOME, SESSION_ROLE, get_account, role_required
+from register_app.forms import PharmacyRegisterForm
 
 from .forms import InventoryForm, VerificationUploadForm
 from .models import Inventory, OperatingHours, PharmacyVerification
+
+
+def pharmacy_register_view(request):
+    """Register a pharmacy (starts as 'pending' until an admin verifies it)."""
+    if get_account(request):
+        return redirect(ROLE_HOME[request.session[SESSION_ROLE]])
+
+    if request.method == 'POST':
+        form = PharmacyRegisterForm(request.POST)
+        if form.is_valid():
+            pharmacy = form.save()
+            log_activity('pharmacy', pharmacy.pk, 'register',
+                         f'Pharmacy {pharmacy.business_name} registered.')
+            messages.success(
+                request,
+                'Pharmacy registered! Log in and submit your documents so an admin can verify you.'
+            )
+            return redirect('pharmacy_login')
+        messages.error(request, 'Please fix the errors below and try again.')
+    else:
+        form = PharmacyRegisterForm()
+
+    return render(request, 'register_template/register_pharmacy.html', {
+        'form': form,
+        'title': 'Register your pharmacy',
+    })
 
 
 @role_required('pharmacy')

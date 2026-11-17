@@ -73,17 +73,12 @@
             <p class="login-register"><a href="{% url page.register_url %}">{{ page.register_label }}</a></p>
             {% endif %}
 
-            {% if page.other_url %}
+            <!--{% if page.other_url %}
             <p class="login-other">{{ page.other_text }} <a href="{% url page.other_url %}">{{ page.other_label }}</a></p>
-            {% endif %}
+            {% endif %}-->
 
         </div>
     </main>
-    <!--
-    {# ASSET 2 — pharmacist (Figma "image 10") → static/login/doctor.png #}
-    <img class="login-doctor" src="{% static 'login_register/doctor.png' %}" alt="" aria-hidden="true"
-         onerror="this.style.display='none'"> 
-         -->
 
 </body>
 </html>

@@ -1,0 +1,112 @@
+/* ==========================================================================
+   MedFind | Pharmacy registration
+   Loaded AFTER login.css (card, logo, inputs, button, divider, errors).
+   Same look as the user Register screen, but wider so the six fields
+   sit in a two-column grid instead of one very tall column.
+   ========================================================================== */
+
+.pharmacy-register-page .login-card { max-width: 640px; }
+
+.pharmacy-register-page .login-card-inner {
+  min-height: 0;
+  padding: 21px 28px 26px;
+}
+
+.pharmacy-register-page .login-logo { margin-top: 20px; }
+
+/* ---------- Form grid ---------- */
+.pharmacy-register-page .pr-form {
+  max-width: 100%;
+  margin-top: 18px;
+}
+
+.pr-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 22px;
+  align-items: start;
+}
+/* Name and address are long, so they take the full row */
+.pr-business_name,
+.pr-address { grid-column: 1 / -1; }
+
+.pharmacy-register-page .login-field + .login-field { margin-top: 0; }  /* grid gap handles spacing */
+
+.pharmacy-register-page .login-label {
+  margin-bottom: 6px;
+  padding-left: 10px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+/* Same shorter inset field as the user Register screen */
+.pharmacy-register-page .login-input {
+  height: 38px;
+  padding: 0 16px;
+  font-size: 14px;
+  border-radius: 12px;
+  box-shadow:
+    5px 5px 9px rgba(184, 190, 204, 0.45) inset,
+    -5px -5px 9px rgba(255, 255, 255, 0.95) inset;
+}
+.pharmacy-register-page .login-input:focus {
+  box-shadow:
+    5px 5px 9px rgba(184, 190, 204, 0.45) inset,
+    -5px -5px 9px rgba(255, 255, 255, 0.95) inset,
+    0 0 0 2px rgba(117, 130, 191, 0.55);
+}
+
+.login-help {
+  margin: 4px 0 0 10px;
+  font-size: 10px;
+  font-weight: 300;
+  color: var(--lg-muted);
+}
+
+/* line error messages up with the label text */
+.pharmacy-register-page .login-errors { margin-left: 10px; }
+.pharmacy-register-page .login-errors.general { margin-left: 0; }
+
+/* ---------- Verification note (small recessed callout) ---------- */
+.pr-note {
+  margin: 20px 0 0;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.55;
+  text-align: center;
+  color: var(--lg-navy);
+  background: var(--lg-surface-inner);
+  border-radius: 12px;
+  box-shadow:
+    4px 4px 8px rgba(184, 190, 204, 0.45) inset,
+    -4px -4px 8px rgba(255, 255, 255, 0.95) inset;
+}
+
+/* ---------- Sign Up button (same size as the user Register screen) ---------- */
+.pharmacy-register-page .login-submit-row { margin-top: 20px; }
+.pharmacy-register-page .login-btn {
+  width: 169px;
+  height: 38px;
+  font-size: 20px;
+  border-radius: 40px;
+}
+
+/* ---------- Divider + links ---------- */
+.pharmacy-register-page .login-divider { margin-top: 18px; max-width: 284px; }
+.pharmacy-register-page .login-divider::before,
+.pharmacy-register-page .login-divider::after { flex-basis: 36px; }
+.pharmacy-register-page .login-register { margin-top: 6px; }
+.pharmacy-register-page .login-other { margin-top: 10px; max-width: none; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+  .pr-grid { grid-template-columns: 1fr; gap: 12px; }
+  .pr-business_name,
+  .pr-address { grid-column: auto; }
+}
+@media (max-width: 480px) {
+  .pharmacy-register-page .login-card-inner { padding: 20px 16px 22px; }
+  .pharmacy-register-page .login-divider::before,
+  .pharmacy-register-page .login-divider::after { flex-basis: 20px; }
+}

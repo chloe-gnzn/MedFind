@@ -29,6 +29,9 @@ class LoginForm(forms.Form):
         # /manage/login/), not by a dropdown the visitor can change.
         super().__init__(*args, **kwargs)
         self.role = role
+        if role == 'pharmacy':
+            # pharmacies log in with their email only
+            self.fields['email'].widget.attrs['placeholder'] = 'email'
 
     def clean(self):
         cleaned = super().clean()

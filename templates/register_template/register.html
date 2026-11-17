@@ -29,7 +29,6 @@
             <h1 class="login-title">Register</h1>
 
             <div class="login-logo" aria-label="MedFind+">MedFind<span class="plus">+</span></div>
-            {% if kind == 'pharmacy' %}<p class="login-role">{{ title }}</p>{% endif %}
 
             {% if messages %}
             <ul class="login-messages" role="status">
@@ -70,7 +69,7 @@
 
             <div class="login-divider">Already have an account?</div>
             <p class="login-register">
-                <a href="{% if kind == 'pharmacy' %}{% url 'pharmacy_login' %}{% else %}{% url 'login' %}{% endif %}">Log in here!</a>
+                <a href="{% url 'login' %}">Log in here!</a>
             </p>
 
         </div>

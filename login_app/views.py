@@ -19,22 +19,13 @@ LOGIN_PAGES = {
         'other_text': 'Own a pharmacy?',
         'other_label': 'Go to the pharmacy portal',
     },
-    'pharmacy': {
-        'heading': 'Pharmacy portal login',
-        'register_url': 'register_pharmacy',
-        'register_text': 'New pharmacy?',
-        'register_label': 'Register your pharmacy',
-        'other_url': 'landing',
-        'other_text': 'Just looking for medicine?',
-        'other_label': 'Go to the main site',
-    },
     'admin': {
         'heading': 'Admin login',
     },
 }
 
 
-def _login(request, role):
+def _login(request, role, template='login_template/login.html'):
     # already logged in -> straight to that account's own home screen
     if get_account(request):
         return redirect(ROLE_HOME[request.session[SESSION_ROLE]])
@@ -49,10 +40,10 @@ def _login(request, role):
     else:
         form = LoginForm(role=role)
 
-    return render(request, 'login_template/login.html', {
+    return render(request, template, {
         'form': form,
         'role': role,
-        'page': LOGIN_PAGES[role],
+        'page': LOGIN_PAGES.get(role, {}),
     })
 
 
@@ -62,8 +53,8 @@ def login_view(request):
 
 
 def pharmacy_login_view(request):
-    """Pharmacies  ->  /pharmacy-portal/login/"""
-    return _login(request, 'pharmacy')
+    """Pharmacies  ->  /pharmacy-portal/login/  (own screen, not shared with users)"""
+    return _login(request, 'pharmacy', template='login_template/login_pharmacy.html')
 
 
 def admin_login_view(request):
