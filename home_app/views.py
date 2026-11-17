@@ -92,6 +92,11 @@ def search_view(request):
             Q(business_name__icontains=q) | Q(address__icontains=q),
             verification_status='approved', is_active=True,
         )
+        # open / closed / hours-not-set badge for each result
+        pharmacies = list(pharmacies)
+        open_map = open_now_map([p.pk for p in pharmacies])
+        for p in pharmacies:
+            p.open_now = open_map[p.pk]
         # remember what the user searched for (skip an immediate repeat)
         last = SearchHistory.objects.filter(user=request.account).first()
         if last is None or last.search_term.lower() != q.lower():

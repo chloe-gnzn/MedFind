@@ -1,52 +1,156 @@
-{% extends 'base.html' %}
-{% block title %}Search{% endblock %}
-{% block content %}
-<h1 class="page-title">Search</h1>
-<p class="page-sub">Look up a medicine by brand or generic name, or find a pharmacy.</p>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MedFind | Search</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@600&family=Alexandria:wght@300;400;700&family=Lalezar&display=swap" rel="stylesheet">
+    {# home.css already holds the shared nav, profile menu, panel shell and buttons #}
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/search.css' %}">
+</head>
+<body class="home-page search-page">
 
-<div class="panel">
-    <form method="get" class="search-bar">
-        <input type="text" name="q" value="{{ q }}" placeholder="e.g. paracetamol, Biogesic, Colon Health">
-        <select name="category" class="form-input">
-            <option value="">All categories</option>
-            {% for c in categories %}
-                <option value="{{ c.category_id }}" {% if category_id == c.category_id|stringformat:"s" %}selected{% endif %}>{{ c.category_name }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit" class="btn">Search</button>
-    </form>
-</div>
+    {# ===== Top navigation bar (same as Home) ===== #}
+    <header class="home-nav">
+        <a class="home-logo" href="{% url 'home' %}" aria-label="MedFind+">MedFind<span class="plus">+</span></a>
 
-<div class="panel">
-    <h2>Medicines ({{ medicines|length }})</h2>
-    {% for m in medicines %}
-    <div class="list-item">
-        <div>
-            <a class="title" href="{% url 'medicine_detail' m.medicine_id %}">{{ m.medicine_name }}</a>
-            <div class="muted">{{ m.generic_name }} · {{ m.strength }} {{ m.form }} · {{ m.category.category_name }}</div>
+        <nav class="home-nav-links" aria-label="Main">
+            <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'favorites' %}">Favorites</a>
+            <a href="{% url 'history' %}">History</a>
+        </nav>
+
+        {# Profile button (menu: Log Out). Icon = static/home/icon-profile.png, colored in home.css #}
+        <details class="home-profile">
+            <summary aria-label="Account menu">
+                <span class="mask-icon home-profile-icon" aria-hidden="true"></span>
+            </summary>
+            <nav class="home-profile-menu">
+                <a href="{% url 'logout' %}" class="logout">Log Out</a>
+            </nav>
+        </details>
+    </header>
+
+    <div class="home-shell">
+
+        {# ===== Title (left) + search (right) ===== #}
+        <div class="sr-top">
+            <div class="sr-heading">
+                <h1 class="sr-title">Search</h1>
+                <p class="sr-sub">Look up a medicine by brand or generic name, or find a pharmacy.</p>
+            </div>
+
+            <form class="sr-form" method="get" action="{% url 'search' %}" role="search">
+                {% if category_id %}<input type="hidden" name="category" value="{{ category_id }}">{% endif %}
+                <input class="sr-input" type="text" name="q" value="{{ q }}"
+                       placeholder="Search Pharmacy/Medicine" aria-label="Search pharmacy or medicine" autocomplete="off">
+                <button type="submit" class="sr-btn">Search</button>
+            </form>
         </div>
-        <span class="badge {% if m.pharmacy_count %}available{% else %}out_of_stock{% endif %}">
-            {% if m.pharmacy_count %}In stock at {{ m.pharmacy_count }} pharmac{{ m.pharmacy_count|pluralize:"y,ies" }}{% else %}Not in stock nearby{% endif %}
-        </span>
-    </div>
-    {% empty %}
-        <div class="empty">No medicines matched your search.</div>
-    {% endfor %}
-</div>
 
-{% if q %}
-<div class="panel">
-    <h2>Pharmacies ({{ pharmacies|length }})</h2>
-    {% for p in pharmacies %}
-    <div class="list-item">
-        <div>
-            <a class="title" href="{% url 'pharmacy_detail' p.pharmacy_id %}">{{ p.business_name }}</a>
-            <div class="muted">{{ p.address }} · {{ p.contact_number }}</div>
-        </div>
-    </div>
-    {% empty %}
-        <div class="empty">No pharmacies matched your search.</div>
-    {% endfor %}
-</div>
-{% endif %}
-{% endblock %}
+        {# Rectangle 1: raised outer shell  /  Rectangle 2: recessed inner panel #}
+        <main class="home-panel">
+          <div class="home-panel-inner">
+            {% if messages %}
+            <ul class="home-messages" role="status">
+                {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+
+            <div class="home-scroll sr-scroll">
+
+                {# ---- Category filter chips (keeps the search term) ---- #}
+                {% if categories %}
+                <nav class="sr-chips" aria-label="Filter medicines by category">
+                    <a class="sr-chip {% if not category_id %}active{% endif %}"
+                       href="{% url 'search' %}{% if q %}?q={{ q|urlencode }}{% endif %}">All</a>
+                    {% for c in categories %}
+                    <a class="sr-chip {% if category_id == c.category_id|stringformat:'s' %}active{% endif %}"
+                       href="{% url 'search' %}?{% if q %}q={{ q|urlencode }}&amp;{% endif %}category={{ c.category_id }}">{{ c.category_name }}</a>
+                    {% endfor %}
+                </nav>
+                {% endif %}
+
+                {# ================= Medicines ================= #}
+                <section class="sr-card" aria-labelledby="sr-med-h">
+                    <h2 class="sr-card-title" id="sr-med-h">Medicines ({{ medicines|length }})</h2>
+
+                    <div class="sr-list">
+                    {% for m in medicines %}
+                        <article class="sr-row">
+                            <div class="sr-row-main">
+                                <a class="sr-row-title" href="{% url 'medicine_detail' m.medicine_id %}">{{ m.medicine_name }}</a>
+                                <p class="sr-row-meta">
+                                    {{ m.generic_name }}<span class="sr-dot">·</span>{{ m.strength }} {{ m.form }}<span class="sr-dot">·</span>{{ m.category.category_name }}
+                                </p>
+                            </div>
+                            <div class="sr-row-side">
+                                {% if m.pharmacy_count %}
+                                    <span class="sr-badge in">In stock at {{ m.pharmacy_count }} pharmac{{ m.pharmacy_count|pluralize:"y,ies" }}</span>
+                                {% else %}
+                                    <span class="sr-badge out">Not in stock nearby</span>
+                                {% endif %}
+                                <a class="sr-view" href="{% url 'medicine_detail' m.medicine_id %}">View</a>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <div class="sr-empty">
+                            <strong>No medicines found</strong>
+                            <span>Try a brand or generic name, or clear the category filter.</span>
+                        </div>
+                    {% endfor %}
+                    </div>
+                </section>
+
+                {# ================= Pharmacies ================= #}
+                <section class="sr-card" aria-labelledby="sr-ph-h">
+                    <h2 class="sr-card-title" id="sr-ph-h">Pharmacies ({{ pharmacies|length }})</h2>
+
+                    <div class="sr-list">
+                    {% for p in pharmacies %}
+                        <article class="sr-row">
+                            <div class="sr-row-main">
+                                <a class="sr-row-title" href="{% url 'pharmacy_detail' p.pharmacy_id %}">{{ p.business_name }}</a>
+                                <p class="sr-row-meta sr-with-icon">
+                                    {# Same pin asset as Home: static/home/icon-pin.png #}
+                                    <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
+                                    <span>{{ p.address }}{% if p.contact_number %}<span class="sr-dot">·</span>{{ p.contact_number }}{% endif %}</span>
+                                </p>
+                            </div>
+                            <div class="sr-row-side">
+                                {% if p.open_now is None %}
+                                    <span class="sr-badge unset">Hours not set</span>
+                                {% elif p.open_now %}
+                                    <span class="sr-badge in">Open now</span>
+                                {% else %}
+                                    <span class="sr-badge out">Closed</span>
+                                {% endif %}
+                                <a class="sr-view" href="{% url 'pharmacy_detail' p.pharmacy_id %}">Check Stocks</a>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <div class="sr-empty">
+                            {% if q %}
+                                <strong>No pharmacies found</strong>
+                                <span>We couldn't find a pharmacy matching “{{ q }}”.</span>
+                            {% else %}
+                                <strong>Search for a pharmacy</strong>
+                                <span>Type a pharmacy name or street above to see matches here.</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    </div>
+                </section>
+
+            </div>
+          </div>
+        </main>
+
+    </div>{# /.home-shell #}
+
+</body>
+</html>
