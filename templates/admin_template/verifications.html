@@ -1,8 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'admin_base.html' %}
 {% block title %}Verifications{% endblock %}
+{% block page_header %}<h1 class="pp-title">Pharmacy verifications</h1><p class="pp-sub">Review the documents pharmacies submitted.</p>{% endblock %}
 {% block content %}
-<h1 class="page-title">Pharmacy verifications</h1>
-<p class="page-sub">Review the documents pharmacies submitted.</p>
 <div class="chips" style="margin-bottom:18px">
     <a class="chip" href="?status=pending">Pending</a>
     <a class="chip" href="?status=approved">Approved</a>

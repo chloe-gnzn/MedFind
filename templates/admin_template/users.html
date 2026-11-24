@@ -1,8 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'admin_base.html' %}
 {% block title %}Users{% endblock %}
+{% block page_header %}<h1 class="pp-title">Users</h1><p class="pp-sub">Registered MedFind users.</p>{% endblock %}
 {% block content %}
-<h1 class="page-title">Users</h1>
-<p class="page-sub">Registered MedFind users.</p>
 <div class="panel">
     {% if users %}
     <div class="table-wrap">

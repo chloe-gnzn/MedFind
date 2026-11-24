@@ -1,8 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'admin_base.html' %}
 {% block title %}Activity log{% endblock %}
+{% block page_header %}<h1 class="pp-title">Activity log</h1><p class="pp-sub">Latest 200 events.</p>{% endblock %}
 {% block content %}
-<h1 class="page-title">Activity log</h1>
-<p class="page-sub">Latest 200 events.</p>
 <div class="chips" style="margin-bottom:18px">
     <a class="chip" href="{% url 'admin_activity' %}">All</a>
     <a class="chip" href="?actor=user">Users</a>

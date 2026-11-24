@@ -1,7 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'admin_base.html' %}
 {% block title %}Review verification{% endblock %}
+{% block page_header %}<h1 class="pp-title">Review: {{ v.pharmacy.business_name }}</h1>{% endblock %}
 {% block content %}
-<h1 class="page-title">Review: {{ v.pharmacy.business_name }}</h1>
 <div class="panel">
     <table class="data">
         <tr><td class="muted">Email</td><td>{{ v.pharmacy.email }}</td></tr>

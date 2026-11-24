@@ -1,10 +1,8 @@
-{% extends 'base.html' %}
+{% extends 'admin_base.html' %}
 {% block title %}Medicines{% endblock %}
+{% block page_header %}<h1 class="pp-title">Medicines</h1><p class="pp-sub">The catalog pharmacies pick from.</p>{% endblock %}
+{% block page_actions %}<a class="btn" href="{% url 'admin_medicine_add' %}">+ Add medicine</a>{% endblock %}
 {% block content %}
-<div class="row-between">
-    <div><h1 class="page-title">Medicines</h1><p class="page-sub">The catalog pharmacies pick from.</p></div>
-    <a class="btn" href="{% url 'admin_medicine_add' %}">+ Add medicine</a>
-</div>
 <div class="panel">
     {% if medicines %}
     <div class="table-wrap">

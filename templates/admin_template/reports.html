@@ -1,10 +1,7 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends 'admin_base.html' %}
 {% block title %}Reports{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/admin_reports.css' %}">{% endblock %}
+{% block page_header %}<h1 class="pp-title">Reports</h1><p class="pp-sub">Stock gaps: which catalog medicines can customers actually find right now?</p>{% endblock %}
 {% block content %}
-<h1 class="page-title">Reports</h1>
-<p class="page-sub">Stock gaps: which catalog medicines can customers actually find right now?</p>
 
 <div class="grid">
     <div class="stat"><div class="num">{{ total }}</div><div class="lbl">Medicines in the catalog</div></div>

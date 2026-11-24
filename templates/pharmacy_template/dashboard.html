@@ -1,11 +1,13 @@
-{% extends 'base.html' %}
+{% extends 'pharmacy_base.html' %}
 {% block title %}Pharmacy dashboard{% endblock %}
+{% block page_header %}
+<h1 class="home-welcome">Welcome, <span class="name">{{ pharmacy.business_name }}!</span></h1>
+<p class="pp-sub">{{ pharmacy.address }} · {{ pharmacy.contact_number }}</p>
+{% endblock %}
 {% block content %}
-<h1 class="page-title">{{ pharmacy.business_name }}</h1>
-<p class="page-sub">{{ pharmacy.address }} · {{ pharmacy.contact_number }}</p>
 
 {% if pharmacy.verification_status == 'approved' %}
-    <div class="banner approved">✔ Your pharmacy is verified and visible to customers.</div>
+    <div class="banner approved">Your pharmacy is verified and visible to customers.</div>
 {% elif pharmacy.verification_status == 'rejected' %}
     <div class="banner rejected">Your last verification was rejected{% if latest_verification.remarks %}: {{ latest_verification.remarks }}{% endif %}.
         <a href="{% url 'pharmacy_verification' %}">Submit new documents</a>.</div>

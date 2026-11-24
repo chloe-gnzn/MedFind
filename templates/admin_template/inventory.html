@@ -1,10 +1,7 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends 'admin_base.html' %}
 {% block title %}Inventory monitoring{% endblock %}
-{% block head %}<link rel="stylesheet" href="{% static 'css/admin_reports.css' %}">{% endblock %}
+{% block page_header %}<h1 class="pp-title">Inventory monitoring</h1><p class="pp-sub">Availability records submitted by participating pharmacies.</p>{% endblock %}
 {% block content %}
-<h1 class="page-title">Inventory monitoring</h1>
-<p class="page-sub">Availability records submitted by participating pharmacies.</p>
 
 {# ---- summary tiles (reflect the current search / pharmacy / category filters) ---- #}
 <div class="grid">
@@ -16,12 +13,12 @@
 
 <div class="panel">
     <form method="get" class="filter-bar" action="{% url 'admin_inventory' %}">
-        <input type="text" class="form-input" name="q" value="{{ q }}" placeholder="Search medicine, generic name or pharmacy">
-        <select name="pharmacy" class="form-input" aria-label="Pharmacy">
+        <input type="text" class="form-input" name="q" value="{{ q }}" placeholder="Search medicine, generic name or pharmacy" aria-label="Search">
+        <select name="pharmacy" class="form-input" aria-label="Pharmacy" onchange="this.form.submit()">
             <option value="">All pharmacies</option>
             {% for p in pharmacies %}<option value="{{ p.pharmacy_id }}" {% if pharmacy_id == p.pharmacy_id|stringformat:'s' %}selected{% endif %}>{{ p.business_name }}</option>{% endfor %}
         </select>
-        <select name="category" class="form-input" aria-label="Category">
+        <select name="category" class="form-input" aria-label="Category" onchange="this.form.submit()">
             <option value="">All categories</option>
             {% for c in categories %}<option value="{{ c.category_id }}" {% if category_id == c.category_id|stringformat:'s' %}selected{% endif %}>{{ c.category_name }}</option>{% endfor %}
         </select>
@@ -29,19 +26,19 @@
         <button class="btn" type="submit">Filter</button>
         {% if q or pharmacy_id or category_id or status %}<a class="btn secondary" href="{% url 'admin_inventory' %}">Reset</a>{% endif %}
     </form>
-</div>
 
-<div class="panel">
-    <div class="panel-head">
+    <div class="panel-head filter-chips">
         <div class="chips" aria-label="Filter by availability">
-            <a class="chip {% if not status %}active{% endif %}" href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if pharmacy_id %}pharmacy={{ pharmacy_id }}&{% endif %}{% if category_id %}category={{ category_id }}{% endif %}">All<span class="count">{{ total }}</span></a>
+            <a class="chip {% if not status %}active{% endif %}" href="?{{ filter_qs }}">All<span class="count">{{ total }}</span></a>
             {% for value, label in status_choices %}
-            <a class="chip {% if status == value %}active{% endif %}" href="?status={{ value }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if pharmacy_id %}&pharmacy={{ pharmacy_id }}{% endif %}{% if category_id %}&category={{ category_id }}{% endif %}">{{ label }}<span class="count">{% if value == 'available' %}{{ counts.available|default:0 }}{% elif value == 'low_stock' %}{{ counts.low_stock|default:0 }}{% else %}{{ counts.out_of_stock|default:0 }}{% endif %}</span></a>
+            <a class="chip {% if status == value %}active{% endif %}" href="?status={{ value }}{% if filter_qs %}&{{ filter_qs }}{% endif %}">{{ label }}<span class="count">{% if value == 'available' %}{{ counts.available|default:0 }}{% elif value == 'low_stock' %}{{ counts.low_stock|default:0 }}{% else %}{{ counts.out_of_stock|default:0 }}{% endif %}</span></a>
             {% endfor %}
         </div>
         <span class="muted">{{ page.paginator.count }} result{{ page.paginator.count|pluralize }}</span>
     </div>
+</div>
 
+<div class="panel">
     {% if page.object_list %}
     <div class="table-wrap">
     <table class="data">

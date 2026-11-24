@@ -1,8 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'admin_base.html' %}
 {% block title %}Pharmacies{% endblock %}
+{% block page_header %}<h1 class="pp-title">Pharmacies</h1><p class="pp-sub">All registered pharmacies.</p>{% endblock %}
 {% block content %}
-<h1 class="page-title">Pharmacies</h1>
-<p class="page-sub">All registered pharmacies.</p>
 <div class="panel">
     {% if pharmacies %}
     <div class="table-wrap">

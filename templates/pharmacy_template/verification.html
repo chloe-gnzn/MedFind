@@ -1,8 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'pharmacy_base.html' %}
 {% block title %}Verification{% endblock %}
+{% block page_header %}
+<h1 class="pp-title">Pharmacy verification</h1>
+<p class="pp-sub">Customers only see verified pharmacies. Upload your business permit or pharmacy license for an admin to review.</p>
+{% endblock %}
 {% block content %}
-<h1 class="page-title">Pharmacy verification</h1>
-<p class="page-sub">Customers only see verified pharmacies. Upload your business permit or pharmacy license for an admin to review.</p>
 
 <div class="banner {{ pharmacy.verification_status }}">
     Current status: <strong>{{ pharmacy.get_verification_status_display }}</strong>

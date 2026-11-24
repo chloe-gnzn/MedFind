@@ -1,7 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'pharmacy_base.html' %}
 {% block title %}{{ mode }} inventory item{% endblock %}
+{% block page_header %}<h1 class="pp-title">{{ mode }} inventory item</h1>{% endblock %}
 {% block content %}
-<h1 class="page-title">{{ mode }} inventory item</h1>
 <div class="panel narrow">
     <form method="post" novalidate>
         {% csrf_token %}

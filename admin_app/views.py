@@ -265,6 +265,9 @@ def inventory_monitor_view(request):
     # keep the filters in the pagination links
     keep = request.GET.copy()
     keep.pop('page', None)
+    # same, but without 'status' too: used by the availability chips so they keep the other filters
+    no_status = keep.copy()
+    no_status.pop('status', None)
 
     return render(request, 'admin_template/inventory.html', {
         'page': page,
@@ -279,6 +282,7 @@ def inventory_monitor_view(request):
         'total': total,
         'pharmacies_reporting': pharmacies_reporting,
         'querystring': keep.urlencode(),
+        'filter_qs': no_status.urlencode(),
         'sql': _pretty_sql(rows),              # shown in the "Generated SQL" box
     })
 

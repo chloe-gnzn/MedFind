@@ -1,8 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'admin_base.html' %}
 {% block title %}Admin dashboard{% endblock %}
+{% block page_header %}<h1 class="pp-title">Admin dashboard</h1><p class="pp-sub">Overview of MedFind.</p>{% endblock %}
 {% block content %}
-<h1 class="page-title">Admin dashboard</h1>
-<p class="page-sub">Overview of MedFind.</p>
 
 <div class="grid">
     <a class="stat" href="{% url 'admin_verifications' %}"><div class="num">{{ pending_count }}</div><div class="lbl">Pending verifications</div></a>

@@ -1,10 +1,11 @@
-{% extends 'base.html' %}
+{% extends 'pharmacy_base.html' %}
 {% block title %}Inventory{% endblock %}
+{% block page_header %}
+<h1 class="pp-title">Inventory</h1>
+<p class="pp-sub">Medicines your pharmacy carries.</p>
+{% endblock %}
+{% block page_actions %}<a class="btn" href="{% url 'inventory_add' %}">+ Add medicine</a>{% endblock %}
 {% block content %}
-<div class="row-between">
-    <div><h1 class="page-title">Inventory</h1><p class="page-sub">Medicines your pharmacy carries.</p></div>
-    <a class="btn" href="{% url 'inventory_add' %}">+ Add medicine</a>
-</div>
 <div class="panel">
     {% if items %}
     <div class="table-wrap">

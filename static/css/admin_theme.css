@@ -1,0 +1,92 @@
+/* MedFind | extras shared by admin + user pages (loaded by admin_base.html and user_base.html). Loaded AFTER home.css + pharmacy_theme.css by admin_base.html.
+   Only things the pharmacy theme doesn't already cover (chips, filters, pager, SQL box...). */
+
+/* 9 nav links: tighter so they fit beside the logo + profile button */
+.pharmacy-page .home-nav { gap: 24px; }
+.pharmacy-page .admin-nav-links { gap: 18px; flex-wrap: wrap; }
+
+.pharmacy-page .row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.pharmacy-page .row-between h2 { margin: 0; }
+.pharmacy-page .row-between a.muted { color: var(--hm-accent); font-weight: 700; text-decoration: none; }
+.pharmacy-page .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.pharmacy-page .panel-head h2 { margin: 0; }
+.pharmacy-page .panel p { color: var(--hm-navy); font-size: 14px; }
+
+/* stat number colours */
+.pharmacy-page .stat .num.red   { color: #B04E43; }
+.pharmacy-page .stat .num.amber { color: #9A6A00; }
+
+/* badges: extra colour names used by the admin tables */
+.pharmacy-page .badge.green { color: #178A1C; }
+.pharmacy-page .badge.red   { color: #B04E43; }
+
+/* textarea uses the same inset field */
+.pharmacy-page textarea.form-input { height: auto; min-height: 90px; padding: 12px 16px; resize: vertical; }
+.pharmacy-page select.form-input { appearance: auto; }
+
+/* chips (filters) */
+.pharmacy-page .chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.pharmacy-page .chip {
+  display: inline-flex; align-items: center;
+  min-height: 30px; padding: 0 16px;
+  font-size: 12px; font-weight: 600; text-decoration: none;
+  color: var(--hm-navy); background: var(--hm-surface); border-radius: 44px;
+  box-shadow: 4px 4px 8px rgba(184, 190, 204, 0.6), -4px -4px 8px rgba(255, 255, 255, 0.9);
+  transition: color .15s ease, box-shadow .15s ease;
+}
+.pharmacy-page .chip:hover { color: var(--hm-accent); }
+.pharmacy-page .chip .count { margin-left: 6px; font-weight: 300; color: #5B6798; }
+.pharmacy-page .chip.red { color: #B04E43; }
+.pharmacy-page .chip.active {
+  color: #fff; background: linear-gradient(180deg, #172B51 0%, #7689AC 100%);
+  box-shadow: 4px 4px 7px rgba(0, 0, 0, 0.25);
+}
+.pharmacy-page .chip.active .count { color: #D7DEEF; }
+
+/* filter bar */
+.pharmacy-page .filter-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.pharmacy-page .filter-bar .form-input { width: auto; min-width: 160px; }
+.pharmacy-page .filter-bar input[type="text"] { flex: 1; min-width: 220px; }
+
+/* pagination */
+.pharmacy-page .pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+.pharmacy-page .pager .btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+.pharmacy-page .price { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* "how this page is built" note + generated SQL (recessed) */
+.pharmacy-page .note {
+  margin: 0 0 16px; padding: 14px 20px; font-size: 13px; line-height: 1.55; color: var(--hm-navy);
+  background: var(--hm-surface-inner); border-radius: 16px;
+  box-shadow: 4px 4px 8px rgba(184, 190, 204, 0.45) inset, -4px -4px 8px rgba(255, 255, 255, 0.95) inset;
+}
+.pharmacy-page .note code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+.pharmacy-page details.sql summary { cursor: pointer; padding: 4px 0; font-size: 13px; font-weight: 700; color: var(--hm-accent); }
+.pharmacy-page .sql-box {
+  margin: 8px 0 0; padding: 14px 16px; font-size: 12.5px; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word; overflow-x: auto;
+  color: #E6EAF7; background: #172B51; border-radius: 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* key/value tables (verification review) have no header row */
+.pharmacy-page table.data td.muted { width: 140px; }
+
+/* list rows (history / favorites) + link titles */
+.pharmacy-page .list-item { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 13px 0; border-bottom: 1px solid rgba(160, 166, 190, 0.3); }
+.pharmacy-page .list-item:last-child { border-bottom: 0; }
+.pharmacy-page a.title { font-weight: 700; color: var(--hm-accent); text-decoration: none; }
+.pharmacy-page a.title:hover { text-decoration: underline; }
+.pharmacy-page .panel .chip { box-shadow: 3px 3px 6px rgba(184,190,204,.5), -3px -3px 6px rgba(255,255,255,.9); }
+
+
+/* ---- Inventory filter bar: wraps instead of overflowing; selects match the inset inputs ---- */
+.pharmacy-page .filter-bar { margin-bottom: 18px; }
+.pharmacy-page .filter-bar .form-input { flex: 1 1 180px; width: auto; min-width: 0; }
+.pharmacy-page .filter-bar input[type="text"] { flex: 2 1 260px; }
+.pharmacy-page .filter-bar .btn { flex: 0 0 auto; }
+.pharmacy-page .filter-bar select.form-input {
+  appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23212F68' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center;
+}
+.pharmacy-page .filter-chips { margin: 0; padding-top: 16px; border-top: 1px solid rgba(160, 166, 190, 0.3); }

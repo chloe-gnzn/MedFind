@@ -1,8 +1,10 @@
-{% extends 'base.html' %}
+{% extends 'pharmacy_base.html' %}
 {% block title %}Operating hours{% endblock %}
+{% block page_header %}
+<h1 class="pp-title">Operating hours</h1>
+<p class="pp-sub">Customers see whether you're open based on these hours.</p>
+{% endblock %}
 {% block content %}
-<h1 class="page-title">Operating hours</h1>
-<p class="page-sub">Customers see whether you're open based on these hours.</p>
 <div class="panel">
     <form method="post">
         {% csrf_token %}

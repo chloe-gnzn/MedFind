@@ -1,7 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'admin_base.html' %}
 {% block title %}Confirm delete{% endblock %}
+{% block page_header %}<h1 class="pp-title">Delete {{ what }}?</h1>{% endblock %}
 {% block content %}
-<h1 class="page-title">Delete {{ what }}?</h1>
 <div class="panel narrow">
     <p>This can't be undone.</p>
     <form method="post" class="actions">
