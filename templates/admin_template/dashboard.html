@@ -10,10 +10,12 @@
     <a class="stat" href="{% url 'admin_users' %}"><div class="num">{{ user_count }}</div><div class="lbl">Users</div></a>
     <a class="stat" href="{% url 'admin_medicines' %}"><div class="num">{{ medicine_count }}</div><div class="lbl">Medicines</div></a>
     <a class="stat" href="{% url 'admin_categories' %}"><div class="num">{{ category_count }}</div><div class="lbl">Categories</div></a>
+    <a class="stat" href="{% url 'admin_inventory' %}"><div class="num">{{ inventory_count }}</div><div class="lbl">Inventory records</div></a>
+    <a class="stat" href="{% url 'admin_reports' %}"><div class="num">{{ no_stock_count }}</div><div class="lbl">Medicines with no stock</div></a>
 </div>
 
 <div class="panel">
     <div class="row-between"><h2>Recent activity</h2><a href="{% url 'admin_activity' %}" class="muted">See all</a></div>
-    {% include 'admin_app/_log_table.html' with logs=recent_logs %}
+    {% include 'admin_template/_log_table.html' with logs=recent_logs %}
 </div>
 {% endblock %}

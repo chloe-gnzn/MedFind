@@ -5,17 +5,14 @@ Django settings for the MedFind project.
 from pathlib import Path
 from decouple import config
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# this portion checks the secret key aka the database you use. 
 SECRET_KEY = config('DJANGO_SECRET_KEY', default='django-insecure-change-this-key-later')
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DJANGO_DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['*']  # tighten this once you deploy
+ALLOWED_HOSTS = ['*']  
 
 
 # Application definition
@@ -70,10 +67,6 @@ WSGI_APPLICATION = 'medfind_project.wsgi.application'
 
 
 # Database
-# MedFind stores its data (users, pharmacies, medicines, etc.) in a
-# Supabase-hosted Postgres database. Fill in your real credentials in a
-# ".env" file (copy .env.example -> .env) once you've created your
-# Supabase project.
 
 DATABASES = {
     'default': {

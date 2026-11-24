@@ -25,5 +25,8 @@ urlpatterns = [
     path('medicines/<int:medicine_id>/edit/', views.medicine_form_view, name='admin_medicine_edit'),
     path('medicines/<int:medicine_id>/delete/', views.medicine_delete_view, name='admin_medicine_delete'),
 
+    path('inventory/', views.inventory_monitor_view, name='admin_inventory'),   # SQL JOIN screen
+    path('reports/', views.stock_report_view, name='admin_reports'),            # SQL SUBQUERY screen
+
     path('activity/', views.activity_view, name='admin_activity'),
 ]

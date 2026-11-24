@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MedFind | {% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block head %}{% endblock %}
 </head>
 <body class="app-body">
     <header class="navbar">
@@ -34,6 +35,8 @@
                 <a href="{% url 'admin_users' %}">Users</a>
                 <a href="{% url 'admin_categories' %}">Categories</a>
                 <a href="{% url 'admin_medicines' %}">Medicines</a>
+                <a href="{% url 'admin_inventory' %}">Inventory</a>
+                <a href="{% url 'admin_reports' %}">Reports</a>
                 <a href="{% url 'admin_activity' %}">Activity log</a>
             </nav>
         {% endif %}

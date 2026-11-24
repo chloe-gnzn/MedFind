@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Reports{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/admin_reports.css' %}">{% endblock %}
+{% block content %}
+<h1 class="page-title">Reports</h1>
+<p class="page-sub">Stock gaps: which catalog medicines can customers actually find right now?</p>
+
+<div class="grid">
+    <div class="stat"><div class="num">{{ total }}</div><div class="lbl">Medicines in the catalog</div></div>
+    <div class="stat"><div class="num">{{ in_stock }}</div><div class="lbl">Available at a pharmacy</div></div>
+    <div class="stat"><div class="num red">{{ no_stock }}</div><div class="lbl">No stock anywhere</div></div>
+</div>
+
+<div class="panel">
+    <div class="panel-head">
+        <div class="chips" aria-label="Choose a report">
+            <a class="chip red {% if view == 'out' %}active{% endif %}" href="?view=out">No stock anywhere<span class="count">{{ no_stock }}</span></a>
+            <a class="chip {% if view == 'in' %}active{% endif %}" href="?view=in">Available somewhere<span class="count">{{ in_stock }}</span></a>
+        </div>
+        <span class="muted">{{ page.paginator.count }} result{{ page.paginator.count|pluralize }}</span>
+    </div>
+
+    {% if page.object_list %}
+    <div class="table-wrap">
+    <table class="data">
+        {% if view == 'in' %}
+        <tr><th>Medicine</th><th>Category</th><th>Form</th><th>Strength</th><th>Available at</th><th>Cheapest</th></tr>
+        {% else %}
+        <tr><th>Medicine</th><th>Category</th><th>Form</th><th>Strength</th><th>Listing status</th></tr>
+        {% endif %}
+        {% for m in page.object_list %}
+        <tr>
+            <td><strong>{{ m.medicine_name }}</strong><div class="muted">{{ m.generic_name }}</div></td>
+            <td>{{ m.category.category_name }}</td>
+            <td>{{ m.form }}</td>
+            <td>{{ m.strength }}</td>
+            {% if view == 'in' %}
+            <td>{{ m.stock_info.n }} pharmac{{ m.stock_info.n|pluralize:"y,ies" }}</td>
+            <td class="price">₱{{ m.stock_info.cheapest|floatformat:2 }}</td>
+            {% else %}
+            <td>
+                {% if m.listed_count %}
+                    <span class="badge out_of_stock">Listed but out of stock ({{ m.listed_count }} listing{{ m.listed_count|pluralize }})</span>
+                {% else %}
+                    <span class="badge pending">Not listed by any pharmacy</span>
+                {% endif %}
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+
+    {% if page.paginator.num_pages > 1 %}
+    <div class="pager">
+        <a class="btn secondary small" {% if page.has_previous %}href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page.previous_page_number }}"{% else %}aria-disabled="true"{% endif %}>← Previous</a>
+        <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+        <a class="btn secondary small" {% if page.has_next %}href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page.next_page_number }}"{% else %}aria-disabled="true"{% endif %}>Next →</a>
+    </div>
+    {% endif %}
+    {% else %}
+        <div class="empty">
+            {% if view == 'in' %}No medicine is currently available at an approved pharmacy.
+            {% else %}Every medicine in the catalog is available at at least one approved pharmacy. 🎉{% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <h2>How this page is built (SQL SUBQUERY)</h2>
+    <p class="note">
+        <strong>Inner query:</strong> the <code>medicine_id</code>s that are <em>Available</em> or <em>Low in stock</em>
+        at an approved, active pharmacy (from <code>pharmacy_app_inventory</code>).<br>
+        <strong>Outer query:</strong> the rows of <code>home_app_medicine</code> whose <code>medicine_id</code>
+        is <code>{% if view == 'in' %}IN{% else %}NOT IN{% endif %}</code> the inner query's result.<br>
+        In Django: <code>Medicine.objects.{% if view == 'in' %}filter{% else %}exclude{% endif %}(medicine_id__in=Subquery(available_ids))</code>
+    </p>
+    <details class="sql">
+        <summary>Show generated SQL</summary>
+        <pre class="sql-box"><code>{{ sql }}</code></pre>
+    </details>
+</div>
+{% endblock %}

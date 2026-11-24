@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Inventory monitoring{% endblock %}
+{% block head %}<link rel="stylesheet" href="{% static 'css/admin_reports.css' %}">{% endblock %}
+{% block content %}
+<h1 class="page-title">Inventory monitoring</h1>
+<p class="page-sub">Availability records submitted by participating pharmacies.</p>
+
+{# ---- summary tiles (reflect the current search / pharmacy / category filters) ---- #}
+<div class="grid">
+    <div class="stat"><div class="num">{{ total }}</div><div class="lbl">Inventory records</div></div>
+    <div class="stat"><div class="num">{{ pharmacies_reporting }}</div><div class="lbl">Pharmacies reporting</div></div>
+    <div class="stat"><div class="num amber">{{ counts.low_stock|default:0 }}</div><div class="lbl">Low in stock</div></div>
+    <div class="stat"><div class="num red">{{ counts.out_of_stock|default:0 }}</div><div class="lbl">Out of stock</div></div>
+</div>
+
+<div class="panel">
+    <form method="get" class="filter-bar" action="{% url 'admin_inventory' %}">
+        <input type="text" class="form-input" name="q" value="{{ q }}" placeholder="Search medicine, generic name or pharmacy">
+        <select name="pharmacy" class="form-input" aria-label="Pharmacy">
+            <option value="">All pharmacies</option>
+            {% for p in pharmacies %}<option value="{{ p.pharmacy_id }}" {% if pharmacy_id == p.pharmacy_id|stringformat:'s' %}selected{% endif %}>{{ p.business_name }}</option>{% endfor %}
+        </select>
+        <select name="category" class="form-input" aria-label="Category">
+            <option value="">All categories</option>
+            {% for c in categories %}<option value="{{ c.category_id }}" {% if category_id == c.category_id|stringformat:'s' %}selected{% endif %}>{{ c.category_name }}</option>{% endfor %}
+        </select>
+        {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+        <button class="btn" type="submit">Filter</button>
+        {% if q or pharmacy_id or category_id or status %}<a class="btn secondary" href="{% url 'admin_inventory' %}">Reset</a>{% endif %}
+    </form>
+</div>
+
+<div class="panel">
+    <div class="panel-head">
+        <div class="chips" aria-label="Filter by availability">
+            <a class="chip {% if not status %}active{% endif %}" href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if pharmacy_id %}pharmacy={{ pharmacy_id }}&{% endif %}{% if category_id %}category={{ category_id }}{% endif %}">All<span class="count">{{ total }}</span></a>
+            {% for value, label in status_choices %}
+            <a class="chip {% if status == value %}active{% endif %}" href="?status={{ value }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if pharmacy_id %}&pharmacy={{ pharmacy_id }}{% endif %}{% if category_id %}&category={{ category_id }}{% endif %}">{{ label }}<span class="count">{% if value == 'available' %}{{ counts.available|default:0 }}{% elif value == 'low_stock' %}{{ counts.low_stock|default:0 }}{% else %}{{ counts.out_of_stock|default:0 }}{% endif %}</span></a>
+            {% endfor %}
+        </div>
+        <span class="muted">{{ page.paginator.count }} result{{ page.paginator.count|pluralize }}</span>
+    </div>
+
+    {% if page.object_list %}
+    <div class="table-wrap">
+    <table class="data">
+        <tr><th>Pharmacy</th><th>Medicine</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Updated</th></tr>
+        {% for i in page.object_list %}
+        <tr>
+            <td><strong>{{ i.pharmacy.business_name }}</strong>
+                <div class="muted">{{ i.pharmacy.address }}</div></td>
+            <td><strong>{{ i.medicine.medicine_name }}</strong>
+                <div class="muted">{{ i.medicine.generic_name }} · {{ i.medicine.strength }} {{ i.medicine.form }}</div></td>
+            <td>{{ i.medicine.category.category_name }}</td>
+            <td class="price">₱{{ i.price|floatformat:2 }}</td>
+            <td>{{ i.stock_quantity }}</td>
+            <td><span class="badge {{ i.availability_status }}">{{ i.get_availability_status_display }}</span></td>
+            <td class="muted">{{ i.updated_at|date:"M d, g:i A" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+
+    {% if page.paginator.num_pages > 1 %}
+    <div class="pager">
+        <a class="btn secondary small" {% if page.has_previous %}href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page.previous_page_number }}"{% else %}aria-disabled="true"{% endif %}>← Previous</a>
+        <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+        <a class="btn secondary small" {% if page.has_next %}href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page.next_page_number }}"{% else %}aria-disabled="true"{% endif %}>Next →</a>
+    </div>
+    {% endif %}
+    {% else %}
+        <div class="empty">No inventory records match these filters.</div>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <h2>How this page is built (SQL JOIN)</h2>
+    <p class="note">
+        An inventory row only stores <code>pharmacy_id</code> and <code>medicine_id</code>.
+        To show the pharmacy name, the medicine name and its category together, Django
+        <strong>JOINs</strong> <code>pharmacy_app_inventory</code> with <code>pharmacy_app_pharmacy</code>,
+        <code>home_app_medicine</code> and <code>home_app_medicinecategory</code> using
+        <code>Inventory.objects.select_related('pharmacy', 'medicine', 'medicine__category')</code>.
+    </p>
+    <details class="sql">
+        <summary>Show generated SQL</summary>
+        <pre class="sql-box"><code>{{ sql }}</code></pre>
+    </details>
+</div>
+{% endblock %}
