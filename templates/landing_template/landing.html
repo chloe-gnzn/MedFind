@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@400;600;700;800&family=Inter:wght@400;700&family=Laila:wght@600&family=Lalezar&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}?v=7">
 </head>
 <body>
 
@@ -20,6 +20,7 @@
         <a href="#top">Home</a>
         <a href="#about">About</a>
         <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
     </nav>
     <div class="lp-auth">
         <a class="lp-login" href="{% url 'login' %}">Log In</a>
@@ -34,28 +35,37 @@
         <div class="lp-art lp-art-pills" aria-hidden="true"></div>
         <h1 class="lp-hero-title">MedFind</h1>
         <div class="lp-art lp-art-lens" aria-hidden="true"></div>
-        <p class="lp-tagline">Find Your Medicine.<br>Find Your Pharmacy.</p>
+
+        <div class="lp-hero-copy">
+            <p class="lp-tagline">Find your medicine faster. Compare verified pharmacies, live prices, and opening hours before you go.</p>
+            <a class="lp-hero-sub-link" href="{% url 'pharmacy_login' %}">Own a pharmacy? Go to Pharmacy Portal →</a>
+        </div>
+
+        <div class="lp-hero-cta-group">
+            <a class="lp-hero-pill" href="{% url 'register' %}">Find Medicines</a>
+            <a class="lp-hero-arrow" href="{% url 'register' %}" aria-label="Get started">→</a>
+        </div>
     </section>
 
     <!-- ============================ ABOUT ============================ -->
     <section class="lp-sheet" id="about">
         <div class="lp-row">
             <h2 class="lp-title"><span class="xl">About</span></h2>
-            <p>MedFind is a web platform that connects people with pharmacies. Search for a medicine by brand or generic name, see which verified pharmacies carry it, compare prices, check stock status, and see whether the pharmacy is open before you leave home.</p>
+            <p>MedFind connects patients and families with local verified pharmacies. Look up any medicine by brand or generic name, compare prices, check live stock status, and verify opening hours before you head out.</p>
         </div>
 
         <div class="lp-row lp-row-flip">
-            <p>Search for a medicine, see which verified pharmacies have it in stock, and compare prices and hours. Pharmacies update their own inventory, and every one is reviewed by an admin before it appears.</p>
+            <p>Pharmacies manage their own real-time inventory and operating schedules, and every pharmacy is reviewed and approved by a MedFind administrator before appearing in public search results.</p>
             <h2 class="lp-title lp-title-right"><span class="xl">What</span><span class="md">It Does</span></h2>
         </div>
 
         <div class="lp-row">
             <h2 class="lp-title"><span class="xl">Its</span><span class="md">Purpose</span></h2>
-            <p>MedFind aims to make that search quick and reliable by putting pharmacy availability in one place, while helping local pharmacies reach more customers.</p>
+            <p>MedFind saves time and avoids wasted trips by putting verified pharmacy availability in one place—while helping neighborhood pharmacies reach customers who need them right now.</p>
         </div>
 
         <aside class="lp-note">
-            <strong>Note:</strong> MedFind shows medicine availability only and does not provide medical advice. Always consult a licensed pharmacist or doctor, and note that prescription medicines require a prescription.
+            <strong>Note:</strong> MedFind shows medicine availability only and does not provide medical advice. Always consult a licensed pharmacist or doctor, and remember that prescription medicines require a valid prescription.
         </aside>
     </section>
 
@@ -63,7 +73,10 @@
     <div id="features" class="lp-anchor">
 
     <section class="lp-features">
-        <h2>Features</h2>
+        <div class="lp-features-head">
+            <h2>Features</h2>
+            <p class="lp-features-sub">Everything you need to check before heading to the pharmacy.</p>
+        </div>
         <div class="lp-cards">
             <article class="lp-card c1">
                 <span class="lp-icon" aria-hidden="true"></span>
@@ -78,12 +91,12 @@
             <article class="lp-card c3">
                 <span class="lp-icon" aria-hidden="true"></span>
                 <h3>Compare prices</h3>
-                <p>Find the best price across nearby pharmacies.</p>
+                <p>Find the best price across verified nearby pharmacies.</p>
             </article>
             <article class="lp-card c4">
                 <span class="lp-icon" aria-hidden="true"></span>
                 <h3>Open<br>now</h3>
-                <p>Check pharmacy hours before you go.</p>
+                <p>Check live pharmacy hours before leaving home.</p>
             </article>
         </div>
     </section>
@@ -91,10 +104,28 @@
     <!-- ============================ HOW IT WORKS ============================ -->
     <section class="lp-how" id="how-it-works">
         <h2>How It Works</h2>
-        <ol>
-            <li><strong>Search</strong> type the medicine you need.</li>
-            <li><strong>Compare</strong> and see which verified pharmacies have the medicine you’re looking for, the price, and whether they're open now.</li>
-            <li><strong>Go</strong> visit the pharmacy, and save favorites for next time.</li>
+        <ol class="lp-steps">
+            <li class="lp-step">
+                <span class="lp-step-num" aria-hidden="true">1</span>
+                <div>
+                    <strong>Search</strong>
+                    <p>Type the brand or generic name of the medicine or pharmacy you need.</p>
+                </div>
+            </li>
+            <li class="lp-step">
+                <span class="lp-step-num" aria-hidden="true">2</span>
+                <div>
+                    <strong>Compare</strong>
+                    <p>See which verified pharmacies carry it, compare prices, and check if they're open now.</p>
+                </div>
+            </li>
+            <li class="lp-step">
+                <span class="lp-step-num" aria-hidden="true">3</span>
+                <div>
+                    <strong>Go</strong>
+                    <p>Visit the right pharmacy right away, and save favorites for quick access next time.</p>
+                </div>
+            </li>
         </ol>
     </section>
 
@@ -114,13 +145,12 @@
             <a href="#how-it-works">How it works</a>
             <a href="#features">Features</a>
             <a href="{% url 'login' %}">Browse medicines</a>
-            <a href="{% url 'login' %}">Log in</a>
-            <a href="{% url 'register' %}">Sign up</a>
+            <a href="{% url 'login' %}">User log in</a>
+            <a href="{% url 'register' %}">User sign up</a>
 
-            <h4 class="gap">Legal</h4>
-            <a href="{% url 'landing_privacy' %}">Privacy</a>
-            <a href="{% url 'landing_terms' %}">Terms</a>
-            <a href="{% url 'landing_security' %}">Security</a>
+            <h4 class="gap">Pharmacies</h4>
+            <a href="{% url 'pharmacy_login' %}">Pharmacy portal</a>
+            <a href="{% url 'register_pharmacy' %}">Register pharmacy</a>
         </div>
 
         <div class="lp-foot-col">
@@ -129,6 +159,7 @@
             <a href="{% url 'landing_contact' %}">Contact</a>
             <a href="{% url 'landing_privacy' %}">Privacy policy</a>
             <a href="{% url 'landing_terms' %}">Terms</a>
+            <a href="{% url 'landing_security' %}">Security</a>
         </div>
     </div>
     <p class="lp-copy">© 2026 Ambera. All rights reserved.</p>
