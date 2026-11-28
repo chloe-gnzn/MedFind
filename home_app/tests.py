@@ -192,6 +192,7 @@ class UserPortalTests(TestCase):
         self.assertContains(res, 'id="sr-med-card"')
         self.assertContains(res, 'Show all 5 medicines')
         self.assertContains(res, 'Show all 5 pharmacies')
+        self.assertNotContains(res, 'Expand (')
         self.assertContains(res, 'class="sr-card is-collapsed"')
 
     def test_medicine_detail_filters_and_best_price(self):

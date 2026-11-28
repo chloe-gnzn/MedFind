@@ -84,17 +84,6 @@
 <section class="sr-card {% if medicines|length > 3 %}is-collapsed{% endif %}" id="sr-med-card" aria-labelledby="sr-med-h">
     <div class="up-card-head">
         <h2 class="sr-card-title" id="sr-med-h">Medicines ({{ medicines|length }})</h2>
-        {% if medicines|length > 3 %}
-        <button type="button"
-                class="btn secondary small sr-expand-toggle"
-                data-target="sr-med-card"
-                data-label-expand="Expand ({{ medicines|length }})"
-                data-label-collapse="Minimize"
-                aria-expanded="false"
-                aria-controls="sr-med-list">
-            Expand ({{ medicines|length }})
-        </button>
-        {% endif %}
     </div>
 
     <div class="sr-list" id="sr-med-list">
@@ -159,17 +148,6 @@
 <section class="sr-card {% if pharmacies|length > 3 %}is-collapsed{% endif %}" id="sr-ph-card" aria-labelledby="sr-ph-h">
     <div class="up-card-head">
         <h2 class="sr-card-title" id="sr-ph-h">Pharmacies ({{ pharmacies|length }})</h2>
-        {% if pharmacies|length > 3 %}
-        <button type="button"
-                class="btn secondary small sr-expand-toggle"
-                data-target="sr-ph-card"
-                data-label-expand="Expand ({{ pharmacies|length }})"
-                data-label-collapse="Minimize"
-                aria-expanded="false"
-                aria-controls="sr-ph-list">
-            Expand ({{ pharmacies|length }})
-        </button>
-        {% endif %}
     </div>
 
     <div class="sr-list" id="sr-ph-list">
