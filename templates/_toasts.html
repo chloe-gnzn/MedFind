@@ -1,0 +1,19 @@
+{% if messages %}
+<div class="up-toast-stack" id="mf-toast-stack" style="position:fixed;top:24px;right:24px;z-index:120;" aria-live="polite" aria-atomic="true">
+    {% for message in messages %}
+    <div class="up-toast {{ message.tags }}" role="status">{{ message }}</div>
+    {% endfor %}
+</div>
+<script>
+(function () {
+    const stack = document.getElementById('mf-toast-stack');
+    if (!stack) return;
+    stack.querySelectorAll('.up-toast').forEach(function (toast) {
+        setTimeout(function () {
+            toast.classList.add('is-leaving');
+            setTimeout(function () { toast.remove(); }, 260);
+        }, 3000);
+    });
+})();
+</script>
+{% endif %}

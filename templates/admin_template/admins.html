@@ -1,0 +1,61 @@
+{% extends 'admin_base.html' %}
+{% block title %}Admin Accounts{% endblock %}
+
+{% block page_header %}
+<h1 class="pp-title">Admin accounts</h1>
+<p class="pp-sub">Manage MedFind administrators and super admins.</p>
+{% endblock %}
+
+{% block page_actions %}
+<a class="btn" href="{% url 'admin_add' %}">+ Add admin</a>
+{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <form method="get" class="filter-bar" action="{% url 'admin_admins' %}">
+        <input type="text" class="form-input" name="q" value="{{ q }}" placeholder="Search admin name or email..." aria-label="Search admins">
+        <button class="btn" type="submit">Search</button>
+        {% if q %}<a class="btn secondary" href="{% url 'admin_admins' %}">Reset</a>{% endif %}
+    </form>
+
+    {% if page.object_list %}
+    <div class="table-wrap">
+    <table class="data">
+        <tr><th>Name</th><th>Email</th><th>Role</th><th>Reviewed</th><th>Created</th><th></th></tr>
+        {% for a in page.object_list %}
+        <tr>
+            <td><strong>{{ a.first_name }} {{ a.last_name }}</strong>{% if a.pk == current_account.pk %} <span class="badge approved">You</span>{% endif %}</td>
+            <td>{{ a.email }}</td>
+            <td><span class="badge {% if a.role == 'super_admin' %}approved{% endif %}">{{ a.get_role_display }}</span></td>
+            <td class="muted">{{ a.reviewed_count }}</td>
+            <td class="muted">{{ a.created_at|date:"M d, Y" }}</td>
+            <td>
+                {% if a.pk != current_account.pk %}
+                <div class="actions">
+                    <form method="post" action="{% url 'admin_toggle_role' a.admin_id %}" class="inline">
+                        {% csrf_token %}
+                        <button class="btn secondary small" type="submit">
+                            {% if a.role == 'super_admin' %}Make Admin{% else %}Make Super Admin{% endif %}
+                        </button>
+                    </form>
+                    <form method="post"
+                          action="{% url 'admin_delete' a.admin_id %}"
+                          class="inline"
+                          data-confirm-title="Delete admin"
+                          data-confirm="Delete admin account {{ a.email }}?">
+                        {% csrf_token %}
+                        <button class="btn danger small" type="submit">Delete</button>
+                    </form>
+                </div>
+                {% else %}
+                    <span class="muted">Current session</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+    {% include 'admin_template/_pager.html' %}
+    {% else %}<div class="empty">No admin accounts match your search.</div>{% endif %}
+</div>
+{% endblock %}

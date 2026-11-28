@@ -69,3 +69,14 @@ class LoginAndForgotPasswordTests(TestCase):
         })
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, 'No account matched that email and phone number.')
+
+    def test_logout_displays_toast_notification_instead_of_inline_banner(self):
+        self.client.post(reverse('login'), {
+            'email': 'ana@example.com',
+            'password': 'StrongPass123!',
+        })
+        res = self.client.get(reverse('logout'), follow=True)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'up-toast-stack')
+        self.assertContains(res, 'You have been logged out.')
+        self.assertNotContains(res, 'login-messages')

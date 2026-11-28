@@ -1,12 +1,28 @@
 {% extends 'admin_base.html' %}
 {% block title %}Activity log{% endblock %}
-{% block page_header %}<h1 class="pp-title">Activity log</h1><p class="pp-sub">Latest 200 events.</p>{% endblock %}
+{% block page_header %}<h1 class="pp-title">Activity log</h1><p class="pp-sub">System-wide audit events.</p>{% endblock %}
 {% block content %}
-<div class="chips" style="margin-bottom:18px">
-    <a class="chip" href="{% url 'admin_activity' %}">All</a>
-    <a class="chip" href="?actor=user">Users</a>
-    <a class="chip" href="?actor=pharmacy">Pharmacies</a>
-    <a class="chip" href="?actor=admin">Admins</a>
+<div class="panel">
+    <form method="get" class="filter-bar" action="{% url 'admin_activity' %}">
+        <input type="text" class="form-input" name="q" value="{{ q }}" placeholder="Search action or description..." aria-label="Search activity">
+        {% if actor_type %}<input type="hidden" name="actor" value="{{ actor_type }}">{% endif %}
+        <button class="btn" type="submit">Search</button>
+        {% if q or actor_type %}<a class="btn secondary" href="{% url 'admin_activity' %}">Reset</a>{% endif %}
+    </form>
+
+    <div class="panel-head filter-chips">
+        <div class="chips" aria-label="Filter by actor type">
+            <a class="chip {% if not actor_type %}active{% endif %}" href="?{{ filter_qs }}">All</a>
+            <a class="chip {% if actor_type == 'user' %}active{% endif %}" href="?actor=user{% if filter_qs %}&{{ filter_qs }}{% endif %}">Users</a>
+            <a class="chip {% if actor_type == 'pharmacy' %}active{% endif %}" href="?actor=pharmacy{% if filter_qs %}&{{ filter_qs }}{% endif %}">Pharmacies</a>
+            <a class="chip {% if actor_type == 'admin' %}active{% endif %}" href="?actor=admin{% if filter_qs %}&{{ filter_qs }}{% endif %}">Admins</a>
+        </div>
+        <span class="muted">{{ page.paginator.count }} event{{ page.paginator.count|pluralize }}</span>
+    </div>
 </div>
-<div class="panel">{% include 'admin_template/_log_table.html' %}</div>
+
+<div class="panel">
+    {% include 'admin_template/_log_table.html' %}
+    {% include 'admin_template/_pager.html' %}
+</div>
 {% endblock %}

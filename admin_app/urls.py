@@ -7,11 +7,18 @@ urlpatterns = [
     path('logout/', login_views.logout_view, name='admin_logout'),
 
     path('', views.dashboard_view, name='admin_dashboard'),
+    path('profile/', views.profile_view, name='admin_profile'),
+
+    path('admins/', views.admins_view, name='admin_admins'),
+    path('admins/add/', views.admin_add_view, name='admin_add'),
+    path('admins/<int:admin_id>/role/', views.admin_toggle_role_view, name='admin_toggle_role'),
+    path('admins/<int:admin_id>/delete/', views.admin_delete_view, name='admin_delete'),
 
     path('verifications/', views.verifications_view, name='admin_verifications'),
     path('verifications/<int:verification_id>/', views.verification_review_view, name='admin_verification_review'),
 
     path('pharmacies/', views.pharmacies_view, name='admin_pharmacies'),
+    path('pharmacies/<int:pharmacy_id>/', views.pharmacy_detail_view, name='admin_pharmacy_detail'),
     path('pharmacies/<int:pharmacy_id>/toggle/', views.pharmacy_toggle_view, name='admin_pharmacy_toggle'),
     path('users/', views.users_view, name='admin_users'),
 

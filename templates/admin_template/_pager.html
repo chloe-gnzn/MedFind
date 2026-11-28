@@ -1,0 +1,7 @@
+{% if page.paginator.num_pages > 1 %}
+<div class="pager">
+    <a class="btn secondary small" {% if page.has_previous %}href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page.previous_page_number }}"{% else %}aria-disabled="true"{% endif %}>← Previous</a>
+    <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    <a class="btn secondary small" {% if page.has_next %}href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page.next_page_number }}"{% else %}aria-disabled="true"{% endif %}>Next →</a>
+</div>
+{% endif %}

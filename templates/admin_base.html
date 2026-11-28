@@ -8,16 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@600&family=Alexandria:wght@300;400;700&family=Lalezar&display=swap" rel="stylesheet">
-    {# home.css = the user Home look (nav, profile menu, raised shell + recessed panel).  #}
-    {# pharmacy_theme.css = the pharmacy pages' own content (cards, tables, forms...).    #}
-    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=2">
     <link rel="stylesheet" href="{% static 'css/pharmacy_theme.css' %}">
     <link rel="stylesheet" href="{% static 'css/admin_theme.css' %}">
     {% block head %}{% endblock %}
 </head>
 <body class="home-page pharmacy-page admin-page">
 
-    {# ===== Top navigation bar (same as the user Home) ===== #}
+    {# ===== Top navigation bar ===== #}
     <header class="home-nav">
         <a class="home-logo" href="{% url 'admin_dashboard' %}" aria-label="MedFind+">MedFind<span class="plus">+</span></a>
 
@@ -32,19 +30,31 @@
             <a href="{% url 'admin_inventory' %}" {% if page == 'admin_inventory' %}class="active" aria-current="page"{% endif %}>Inventory</a>
             <a href="{% url 'admin_reports' %}" {% if page == 'admin_reports' %}class="active" aria-current="page"{% endif %}>Reports</a>
             <a href="{% url 'admin_activity' %}" {% if page == 'admin_activity' %}class="active" aria-current="page"{% endif %}>Activity log</a>
+            {% if current_account.role == 'super_admin' %}
+            <a href="{% url 'admin_admins' %}" {% if 'admin_admin' in page or page == 'admin_add' %}class="active" aria-current="page"{% endif %}>Admins</a>
+            {% endif %}
         </nav>
         {% endwith %}
 
-        {# Profile button (menu: Log Out). Icon = static/home/icon-profile.png #}
+        {# Profile button (menu: My Profile, Log Out) #}
         <details class="home-profile">
             <summary aria-label="Account menu">
                 <span class="mask-icon home-profile-icon" aria-hidden="true"></span>
             </summary>
             <nav class="home-profile-menu">
+                <a href="{% url 'admin_profile' %}">My Profile</a>
                 <a href="{% url 'admin_logout' %}" class="logout">Log Out</a>
             </nav>
         </details>
     </header>
+
+    <div class="up-toast-stack" id="admin-toast-stack" style="position:fixed;top:72px;right:24px;z-index:120;" aria-live="polite" aria-atomic="true">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="up-toast {{ message.tags }}" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    </div>
 
     <div class="home-shell">
 
@@ -57,12 +67,6 @@
         {# Rectangle 1: raised outer shell  /  Rectangle 2: recessed inner panel #}
         <main class="home-panel">
           <div class="home-panel-inner">
-            {% if messages %}
-            <ul class="home-messages" role="status">
-                {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
-            </ul>
-            {% endif %}
-
             {# Only this area scrolls #}
             <div class="home-scroll pp-scroll">
                 {% block content %}{% endblock %}
@@ -71,5 +75,69 @@
         </main>
 
     </div>
+
+    <div class="pp-modal" id="pp-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="pp-modal-title">
+        <div class="pp-modal-card">
+            <div class="pp-modal-inner">
+                <h2 class="pp-modal-title" id="pp-modal-title">Confirm action</h2>
+                <p class="pp-modal-text" id="pp-modal-text"></p>
+                <div class="actions">
+                    <button type="button" class="btn danger" id="pp-modal-confirm">Confirm</button>
+                    <button type="button" class="btn secondary" id="pp-modal-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const stack = document.getElementById('admin-toast-stack');
+        if (stack) {
+            stack.querySelectorAll('.up-toast').forEach(function (toast) {
+                setTimeout(function () {
+                    toast.classList.add('is-leaving');
+                    setTimeout(function () { toast.remove(); }, 260);
+                }, 3000);
+            });
+        }
+
+        const modal = document.getElementById('pp-confirm-modal');
+        const modalTitle = document.getElementById('pp-modal-title');
+        const modalText = document.getElementById('pp-modal-text');
+        const confirmBtn = document.getElementById('pp-modal-confirm');
+        const cancelBtn = document.getElementById('pp-modal-cancel');
+        let pendingForm = null;
+
+        document.addEventListener('submit', function (event) {
+            const form = event.target.closest('form[data-confirm]');
+            if (!form || form.dataset.confirmed === 'true') return;
+            event.preventDefault();
+            pendingForm = form;
+            modalTitle.textContent = form.dataset.confirmTitle || 'Confirm action';
+            modalText.textContent = form.dataset.confirm;
+            modal.classList.add('is-open');
+            confirmBtn.focus();
+        });
+
+        function closeModal() {
+            modal.classList.remove('is-open');
+            pendingForm = null;
+        }
+
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+        if (modal) {
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) closeModal();
+            });
+        }
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function () {
+                if (!pendingForm) return;
+                pendingForm.dataset.confirmed = 'true';
+                pendingForm.submit();
+            });
+        }
+    })();
+    </script>
 </body>
 </html>

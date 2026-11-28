@@ -3,23 +3,60 @@
 {% block page_header %}<h1 class="pp-title">Pharmacies</h1><p class="pp-sub">All registered pharmacies.</p>{% endblock %}
 {% block content %}
 <div class="panel">
-    {% if pharmacies %}
+    <form method="get" class="filter-bar" action="{% url 'admin_pharmacies' %}">
+        <input type="text" class="form-input" name="q" value="{{ q }}" placeholder="Search name, email, or address..." aria-label="Search pharmacies">
+        <select name="status" class="form-input" aria-label="Verification status" onchange="this.form.submit()">
+            <option value="">All verification statuses</option>
+            <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
+            <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+        <select name="active" class="form-input" aria-label="Active status" onchange="this.form.submit()">
+            <option value="">Active &amp; Deactivated</option>
+            <option value="active" {% if active == 'active' %}selected{% endif %}>Active only</option>
+            <option value="inactive" {% if active == 'inactive' %}selected{% endif %}>Deactivated only</option>
+        </select>
+        <button class="btn" type="submit">Filter</button>
+        {% if q or status or active %}<a class="btn secondary" href="{% url 'admin_pharmacies' %}">Reset</a>{% endif %}
+    </form>
+
+    {% if page.object_list %}
     <div class="table-wrap">
     <table class="data">
-        <tr><th>Pharmacy</th><th>Contact</th><th>Verification</th><th>Active</th><th>Registered</th><th></th></tr>
-        {% for p in pharmacies %}
+        <tr><th>Pharmacy</th><th>Contact</th><th>Verification</th><th>Active</th><th>Inventory</th><th>Registered</th><th></th></tr>
+        {% for p in page.object_list %}
         <tr>
-            <td><strong>{{ p.business_name }}</strong><div class="muted">{{ p.email }}</div></td>
+            <td>
+                <div class="am-ph-cell">
+                    {% if p.photo %}
+                    <div class="am-thumb"><img src="{{ p.photo.url }}" alt="{{ p.business_name }}"></div>
+                    {% endif %}
+                    <div>
+                        <a class="title" href="{% url 'admin_pharmacy_detail' p.pharmacy_id %}">{{ p.business_name }}</a>
+                        <div class="muted">{{ p.email }}</div>
+                    </div>
+                </div>
+            </td>
             <td>{{ p.contact_number }}<div class="muted">{{ p.address }}</div></td>
             <td><span class="badge {{ p.verification_status }}">{{ p.get_verification_status_display }}</span></td>
             <td>{% if p.is_active %}<span class="badge green">Active</span>{% else %}<span class="badge red">Deactivated</span>{% endif %}</td>
+            <td class="muted">{{ p.item_count }} item{{ p.item_count|pluralize }}</td>
             <td class="muted">{{ p.created_at|date:"M d, Y" }}</td>
-            <td><form method="post" action="{% url 'admin_pharmacy_toggle' p.pharmacy_id %}" class="inline">
-                {% csrf_token %}<button class="btn small {% if p.is_active %}danger{% else %}secondary{% endif %}">{% if p.is_active %}Deactivate{% else %}Activate{% endif %}</button></form></td>
+            <td>
+                <div class="actions">
+                    <a class="btn secondary small" href="{% url 'admin_pharmacy_detail' p.pharmacy_id %}">Details</a>
+                    <form method="post" action="{% url 'admin_pharmacy_toggle' p.pharmacy_id %}" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button class="btn small {% if p.is_active %}danger{% else %}secondary{% endif %}">{% if p.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                    </form>
+                </div>
+            </td>
         </tr>
         {% endfor %}
     </table>
     </div>
-    {% else %}<div class="empty">No pharmacies yet.</div>{% endif %}
+    {% include 'admin_template/_pager.html' %}
+    {% else %}<div class="empty">No pharmacies match these filters.</div>{% endif %}
 </div>
 {% endblock %}

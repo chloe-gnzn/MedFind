@@ -1,0 +1,74 @@
+{% extends 'admin_base.html' %}
+{% block title %}Admin Profile{% endblock %}
+
+{% block page_header %}
+<h1 class="pp-title">My Profile</h1>
+<p class="pp-sub">Manage your admin account details and password.</p>
+{% endblock %}
+
+{% block page_actions %}
+<a class="btn secondary" href="{% url 'admin_dashboard' %}">← Back to Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid">
+    <div class="stat">
+        <div class="num" style="font-size:28px;padding:6px 0">{{ admin.get_role_display }}</div>
+        <div class="lbl">Admin role</div>
+    </div>
+    <a class="stat" href="{% url 'admin_verifications' %}">
+        <div class="num">{{ reviewed_count }}</div>
+        <div class="lbl">Verifications reviewed</div>
+    </a>
+    <div class="stat">
+        <div class="num" style="font-size:26px;padding:6px 0">{{ admin.created_at|date:"M d, Y" }}</div>
+        <div class="lbl">Account created</div>
+    </div>
+</div>
+
+<div class="pp-two-col">
+    <section class="panel">
+        <h2>Account Details</h2>
+        <form method="post" action="{% url 'admin_profile' %}" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_profile">
+
+            {% for field in profile_form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            {% endfor %}
+
+            {% if profile_form.non_field_errors %}
+            <ul class="errorlist">{% for e in profile_form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+
+            <button type="submit" class="btn">Save Changes</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Change Password</h2>
+        <form method="post" action="{% url 'admin_profile' %}" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="change_password">
+
+            {% for field in password_form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            {% endfor %}
+
+            {% if password_form.non_field_errors %}
+            <ul class="errorlist">{% for e in password_form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+
+            <button type="submit" class="btn">Update Password</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

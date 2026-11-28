@@ -4,10 +4,17 @@
 {% block page_actions %}<a class="btn" href="{% url 'admin_category_add' %}">+ Add category</a>{% endblock %}
 {% block content %}
 <div class="panel">
-    {% if categories %}
+    <form method="get" class="filter-bar" action="{% url 'admin_categories' %}">
+        <input type="text" class="form-input" name="q" value="{{ q }}" placeholder="Search category name or description..." aria-label="Search categories">
+        <button class="btn" type="submit">Search</button>
+        {% if q %}<a class="btn secondary" href="{% url 'admin_categories' %}">Reset</a>{% endif %}
+    </form>
+
+    {% if page.object_list %}
+    <div class="table-wrap">
     <table class="data">
         <tr><th>Name</th><th>Description</th><th>Medicines</th><th></th></tr>
-        {% for c in categories %}
+        {% for c in page.object_list %}
         <tr>
             <td><strong>{{ c.category_name }}</strong></td>
             <td class="muted">{{ c.description|default:"—" }}</td>
@@ -19,6 +26,8 @@
         </tr>
         {% endfor %}
     </table>
-    {% else %}<div class="empty">No categories yet. Add one before adding medicines.</div>{% endif %}
+    </div>
+    {% include 'admin_template/_pager.html' %}
+    {% else %}<div class="empty">{% if q %}No categories match your search.{% else %}No categories yet. Add one before adding medicines.{% endif %}</div>{% endif %}
 </div>
 {% endblock %}

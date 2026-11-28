@@ -2,28 +2,45 @@
 {% block title %}Verifications{% endblock %}
 {% block page_header %}<h1 class="pp-title">Pharmacy verifications</h1><p class="pp-sub">Review the documents pharmacies submitted.</p>{% endblock %}
 {% block content %}
-<div class="chips" style="margin-bottom:18px">
-    <a class="chip" href="?status=pending">Pending</a>
-    <a class="chip" href="?status=approved">Approved</a>
-    <a class="chip" href="?status=rejected">Rejected</a>
-    <a class="chip" href="?status=all">All</a>
-</div>
 <div class="panel">
-    {% if rows %}
+    <form method="get" class="filter-bar" action="{% url 'admin_verifications' %}">
+        <input type="text" class="form-input" name="q" value="{{ q }}" placeholder="Search pharmacy name or email..." aria-label="Search verifications">
+        {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+        <button class="btn" type="submit">Search</button>
+        {% if q or status != 'pending' %}<a class="btn secondary" href="{% url 'admin_verifications' %}">Reset</a>{% endif %}
+    </form>
+
+    <div class="panel-head filter-chips">
+        <div class="chips" aria-label="Filter by verification status">
+            <a class="chip {% if status == 'pending' %}active{% endif %}" href="?status=pending{% if filter_qs %}&{{ filter_qs }}{% endif %}">Pending<span class="count">{{ counts.pending|default:0 }}</span></a>
+            <a class="chip {% if status == 'approved' %}active{% endif %}" href="?status=approved{% if filter_qs %}&{{ filter_qs }}{% endif %}">Approved<span class="count">{{ counts.approved|default:0 }}</span></a>
+            <a class="chip {% if status == 'rejected' %}active{% endif %}" href="?status=rejected{% if filter_qs %}&{{ filter_qs }}{% endif %}">Rejected<span class="count">{{ counts.rejected|default:0 }}</span></a>
+            <a class="chip {% if status == 'all' %}active{% endif %}" href="?status=all{% if filter_qs %}&{{ filter_qs }}{% endif %}">All<span class="count">{{ counts.all|default:0 }}</span></a>
+        </div>
+        <span class="muted">{{ page.paginator.count }} result{{ page.paginator.count|pluralize }}</span>
+    </div>
+</div>
+
+<div class="panel">
+    {% if page.object_list %}
     <div class="table-wrap">
     <table class="data">
         <tr><th>#</th><th>Pharmacy</th><th>Status</th><th>Reviewed by</th><th></th></tr>
-        {% for v in rows %}
+        {% for v in page.object_list %}
         <tr>
             <td>{{ v.verification_id }}</td>
-            <td><strong>{{ v.pharmacy.business_name }}</strong><div class="muted">{{ v.pharmacy.email }}</div></td>
+            <td>
+                <a class="title" href="{% url 'admin_pharmacy_detail' v.pharmacy.pharmacy_id %}">{{ v.pharmacy.business_name }}</a>
+                <div class="muted">{{ v.pharmacy.email }}</div>
+            </td>
             <td><span class="badge {{ v.status }}">{{ v.get_status_display }}</span></td>
             <td class="muted">{% if v.reviewed_by %}{{ v.reviewed_by.first_name }} · {{ v.reviewed_at|date:"M d, Y" }}{% else %}—{% endif %}</td>
-            <td><a class="btn small {% if v.status == 'pending' %}{% else %}secondary{% endif %}" href="{% url 'admin_verification_review' v.verification_id %}">{% if v.status == 'pending' %}Review{% else %}View{% endif %}</a></td>
+            <td><a class="btn small {% if v.status != 'pending' %}secondary{% endif %}" href="{% url 'admin_verification_review' v.verification_id %}">{% if v.status == 'pending' %}Review{% else %}View{% endif %}</a></td>
         </tr>
         {% endfor %}
     </table>
     </div>
-    {% else %}<div class="empty">Nothing here.</div>{% endif %}
+    {% include 'admin_template/_pager.html' %}
+    {% else %}<div class="empty">No verifications match these filters.</div>{% endif %}
 </div>
 {% endblock %}

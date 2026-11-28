@@ -165,7 +165,8 @@ class BaseForgotPasswordForm(forms.Form):
 
     def save(self):
         self.account.set_password(self.cleaned_data['new_password1'])
-        self.account.save(update_fields=['password_hash', 'updated_at'])
+        fields = ['password_hash', 'updated_at'] if hasattr(self.account, 'updated_at') else ['password_hash']
+        self.account.save(update_fields=fields)
         return self.account
 
 
@@ -239,5 +240,6 @@ class AccountPasswordChangeForm(forms.Form):
 
     def save(self):
         self.account.set_password(self.cleaned_data['new_password1'])
-        self.account.save(update_fields=['password_hash', 'updated_at'])
+        fields = ['password_hash', 'updated_at'] if hasattr(self.account, 'updated_at') else ['password_hash']
+        self.account.save(update_fields=fields)
         return self.account

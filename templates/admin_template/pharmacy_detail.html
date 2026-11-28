@@ -1,0 +1,112 @@
+{% extends 'admin_base.html' %}
+{% block title %}{{ pharmacy.business_name }}{% endblock %}
+
+{% block page_header %}
+<h1 class="pp-title">{{ pharmacy.business_name }}</h1>
+<p class="pp-sub">{{ pharmacy.email }} · {{ pharmacy.contact_number }} · {{ pharmacy.address }}</p>
+{% endblock %}
+
+{% block page_actions %}
+<a class="btn secondary" href="{% url 'admin_pharmacies' %}">← Back to Pharmacies</a>
+<form method="post" action="{% url 'admin_pharmacy_toggle' pharmacy.pharmacy_id %}" class="inline">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button type="submit" class="btn {% if pharmacy.is_active %}danger{% else %}{% endif %}">
+        {% if pharmacy.is_active %}Deactivate{% else %}Activate{% endif %}
+    </button>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="grid">
+    <div class="stat">
+        <div class="num" style="font-size:28px;padding:6px 0">{{ pharmacy.get_verification_status_display }}</div>
+        <div class="lbl">Verification · {% if pharmacy.is_active %}Active{% else %}Deactivated{% endif %}</div>
+    </div>
+    <div class="stat">
+        <div class="num" style="font-size:28px;padding:6px 0">
+            {% if open_now is None %}Not set{% elif open_now %}Open{% else %}Closed{% endif %}
+        </div>
+        <div class="lbl">Current operating status</div>
+    </div>
+    <div class="stat">
+        <div class="num">{{ items|length }}</div>
+        <div class="lbl">Inventory items</div>
+    </div>
+    <div class="stat">
+        <div class="num">{{ favorite_count }}</div>
+        <div class="lbl">Customer favorites</div>
+    </div>
+</div>
+
+<div class="pp-two-col">
+    <section class="panel">
+        <h2>Storefront &amp; Hours</h2>
+        <div class="pp-photo-preview">
+            {% if pharmacy.photo %}
+                <img src="{{ pharmacy.photo.url }}" alt="{{ pharmacy.business_name }}">
+            {% else %}
+                <span>No storefront photo uploaded</span>
+            {% endif %}
+        </div>
+        <table class="data hours-table">
+            {% for row in hour_rows %}
+            <tr>
+                <td><strong>{{ row.label }}</strong></td>
+                <td>
+                    {% if not row.hours %}<span class="muted">Not set</span>
+                    {% elif row.hours.is_closed %}Closed
+                    {% else %}{{ row.hours.opening_time|time:"g:i A" }} – {{ row.hours.closing_time|time:"g:i A" }}{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </section>
+
+    <section class="panel">
+        <h2>Verification History</h2>
+        {% if verifications %}
+        <div class="table-wrap">
+        <table class="data">
+            <tr><th>#</th><th>Document</th><th>Status</th><th>Reviewed</th><th></th></tr>
+            {% for v in verifications %}
+            <tr>
+                <td>{{ v.verification_id }}</td>
+                <td><a href="{{ v.document_url }}" target="_blank">View file</a></td>
+                <td><span class="badge {{ v.status }}">{{ v.get_status_display }}</span></td>
+                <td class="muted">{% if v.reviewed_at %}{{ v.reviewed_at|date:"M d, Y" }} by {{ v.reviewed_by.first_name|default:"admin" }}{% else %}—{% endif %}</td>
+                <td><a class="btn secondary small" href="{% url 'admin_verification_review' v.verification_id %}">{% if v.status == 'pending' %}Review{% else %}View{% endif %}</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+        {% else %}
+            <div class="empty">No verification documents submitted yet.</div>
+        {% endif %}
+    </section>
+</div>
+
+<section class="panel">
+    <h2>Inventory ({{ items|length }})</h2>
+    {% if items %}
+    <div class="table-wrap">
+    <table class="data">
+        <tr><th>Medicine</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Updated</th></tr>
+        {% for i in items %}
+        <tr>
+            <td><strong>{{ i.medicine.medicine_name }}</strong>
+                <div class="muted">{{ i.medicine.generic_name }} · {{ i.medicine.strength }} {{ i.medicine.form }}</div></td>
+            <td>{{ i.medicine.category.category_name }}</td>
+            <td class="price">₱{{ i.price|floatformat:2 }}</td>
+            <td>{{ i.stock_quantity }}</td>
+            <td><span class="badge {{ i.availability_status }}">{{ i.get_availability_status_display }}</span></td>
+            <td class="muted">{{ i.updated_at|date:"M d, Y g:i A" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+    {% else %}
+        <div class="empty">This pharmacy has no inventory items yet.</div>
+    {% endif %}
+</section>
+{% endblock %}

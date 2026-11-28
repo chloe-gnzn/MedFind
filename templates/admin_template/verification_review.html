@@ -4,10 +4,21 @@
 {% block content %}
 <div class="panel">
     <table class="data">
+        <tr><td class="muted">Pharmacy</td><td><a class="title" href="{% url 'admin_pharmacy_detail' v.pharmacy.pharmacy_id %}">{{ v.pharmacy.business_name }}</a></td></tr>
         <tr><td class="muted">Email</td><td>{{ v.pharmacy.email }}</td></tr>
         <tr><td class="muted">Contact</td><td>{{ v.pharmacy.contact_number }}</td></tr>
         <tr><td class="muted">Address</td><td>{{ v.pharmacy.address }}</td></tr>
-        <tr><td class="muted">Document</td><td><a href="{{ v.document_url }}" target="_blank">Open submitted file</a></td></tr>
+        <tr>
+            <td class="muted">Document</td>
+            <td>
+                <a href="{{ v.document_url }}" target="_blank">Open submitted file</a>
+                {% if v.is_image %}
+                <div class="am-doc-preview">
+                    <img src="{{ v.document_url }}" alt="Submitted verification document for {{ v.pharmacy.business_name }}">
+                </div>
+                {% endif %}
+            </td>
+        </tr>
         <tr><td class="muted">Status</td><td><span class="badge {{ v.status }}">{{ v.get_status_display }}</span></td></tr>
         {% if v.reviewed_at %}
         <tr><td class="muted">Reviewed</td><td>{{ v.reviewed_at|date:"M d, Y g:i A" }} by {{ v.reviewed_by.first_name }}</td></tr>

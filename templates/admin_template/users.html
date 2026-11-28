@@ -3,15 +3,29 @@
 {% block page_header %}<h1 class="pp-title">Users</h1><p class="pp-sub">Registered MedFind users.</p>{% endblock %}
 {% block content %}
 <div class="panel">
-    {% if users %}
+    <form method="get" class="filter-bar" action="{% url 'admin_users' %}">
+        <input type="text" class="form-input" name="q" value="{{ q }}" placeholder="Search name, email, or phone number..." aria-label="Search users">
+        <button class="btn" type="submit">Search</button>
+        {% if q %}<a class="btn secondary" href="{% url 'admin_users' %}">Reset</a>{% endif %}
+    </form>
+
+    {% if page.object_list %}
     <div class="table-wrap">
     <table class="data">
-        <tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th></tr>
-        {% for u in users %}
-        <tr><td>{{ u.full_name }}</td><td>{{ u.email }}</td><td>{{ u.phone_number }}</td><td class="muted">{{ u.created_at|date:"M d, Y" }}</td></tr>
+        <tr><th>Name</th><th>Email</th><th>Phone</th><th>Favorites</th><th>Searches</th><th>Joined</th></tr>
+        {% for u in page.object_list %}
+        <tr>
+            <td><strong>{{ u.full_name }}</strong></td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.phone_number }}</td>
+            <td class="muted">{{ u.favorite_count }}</td>
+            <td class="muted">{{ u.search_count }}</td>
+            <td class="muted">{{ u.created_at|date:"M d, Y" }}</td>
+        </tr>
         {% endfor %}
     </table>
     </div>
-    {% else %}<div class="empty">No users yet.</div>{% endif %}
+    {% include 'admin_template/_pager.html' %}
+    {% else %}<div class="empty">No users match your search.</div>{% endif %}
 </div>
 {% endblock %}

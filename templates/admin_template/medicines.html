@@ -4,11 +4,23 @@
 {% block page_actions %}<a class="btn" href="{% url 'admin_medicine_add' %}">+ Add medicine</a>{% endblock %}
 {% block content %}
 <div class="panel">
-    {% if medicines %}
+    <form method="get" class="filter-bar" action="{% url 'admin_medicines' %}">
+        <input type="text" class="form-input" name="q" value="{{ q }}" placeholder="Search brand, generic, form, or strength..." aria-label="Search medicines">
+        <select name="category" class="form-input" aria-label="Category" onchange="this.form.submit()">
+            <option value="">All categories</option>
+            {% for c in categories %}
+            <option value="{{ c.category_id }}" {% if category_id == c.category_id|stringformat:'s' %}selected{% endif %}>{{ c.category_name }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn" type="submit">Filter</button>
+        {% if q or category_id %}<a class="btn secondary" href="{% url 'admin_medicines' %}">Reset</a>{% endif %}
+    </form>
+
+    {% if page.object_list %}
     <div class="table-wrap">
     <table class="data">
         <tr><th>Medicine</th><th>Category</th><th>Form</th><th>Strength</th><th></th></tr>
-        {% for m in medicines %}
+        {% for m in page.object_list %}
         <tr>
             <td><strong>{{ m.medicine_name }}</strong><div class="muted">{{ m.generic_name }}</div></td>
             <td>{{ m.category.category_name }}</td>
@@ -22,6 +34,7 @@
         {% endfor %}
     </table>
     </div>
-    {% else %}<div class="empty">No medicines yet.</div>{% endif %}
+    {% include 'admin_template/_pager.html' %}
+    {% else %}<div class="empty">No medicines match these filters.</div>{% endif %}
 </div>
 {% endblock %}

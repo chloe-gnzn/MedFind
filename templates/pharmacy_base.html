@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@600&family=Alexandria:wght@300;400;700&family=Lalezar&display=swap" rel="stylesheet">
     {# home.css = the user Home look (nav, profile menu, raised shell + recessed panel).  #}
     {# pharmacy_theme.css = the pharmacy pages' own content (cards, tables, forms...).    #}
-    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=2">
     <link rel="stylesheet" href="{% static 'css/pharmacy_theme.css' %}">
     {% block head %}{% endblock %}
 </head>
@@ -42,7 +42,7 @@
         </details>
     </header>
 
-    <div class="up-toast-stack" id="pp-toast-stack" aria-live="polite" aria-atomic="true">
+    <div class="up-toast-stack" id="pp-toast-stack" style="position:fixed;top:72px;right:24px;z-index:120;" aria-live="polite" aria-atomic="true">
         {% if messages %}
             {% for message in messages %}
             <div class="up-toast {{ message.tags }}" role="status">{{ message }}</div>
