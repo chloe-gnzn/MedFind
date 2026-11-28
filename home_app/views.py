@@ -163,12 +163,16 @@ def _build_search_context(request, user=None):
     else:
         fav_medicine_ids, fav_pharmacy_ids = set(), set()
 
-    medicine_forms = (
+    seen_forms = {}
+    for raw_form in (
         Medicine.objects.exclude(form='')
         .values_list('form', flat=True)
-        .distinct()
         .order_by('form')
-    )
+    ):
+        form_clean = raw_form.strip()
+        if form_clean and form_clean.lower() not in seen_forms:
+            seen_forms[form_clean.lower()] = form_clean
+    medicine_forms = list(seen_forms.values())
 
     context = {
         'q': q,

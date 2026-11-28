@@ -11,7 +11,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from admin_app.models import ActivityLog
-from home_app.models import MedicineCategory
+from home_app.models import Medicine, MedicineCategory
 from login_app.forms import AccountPasswordChangeForm
 from login_app.utils import log_activity
 from medfind_project.session_auth import ROLE_HOME, SESSION_ROLE, get_account, role_required
@@ -153,7 +153,29 @@ def inventory_add_view(request):
             return redirect('pharmacy_inventory')
     else:
         form = InventoryForm(pharmacy=request.account)
-    return render(request, 'pharmacy_template/inventory_form.html', {'form': form, 'mode': 'Add'})
+
+    stocked_ids = set(
+        Inventory.objects.filter(pharmacy=request.account).values_list('medicine_id', flat=True)
+    )
+    available_medicines = [
+        {
+            'id': m.pk,
+            'name': m.medicine_name,
+            'generic': m.generic_name,
+            'form': m.form,
+            'strength': m.strength,
+            'category': m.category.category_name,
+            'label': f'{m.medicine_name} ({m.strength} {m.form})',
+            'already_stocked': m.pk in stocked_ids,
+        }
+        for m in Medicine.objects.select_related('category')
+        .order_by('medicine_name', 'strength', 'form')
+    ]
+    return render(
+        request,
+        'pharmacy_template/inventory_form.html',
+        {'form': form, 'mode': 'Add', 'available_medicines': available_medicines},
+    )
 
 
 @role_required('pharmacy')

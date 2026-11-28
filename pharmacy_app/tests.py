@@ -441,3 +441,89 @@ class PharmacyMissingScreensTests(TestCase):
         self.assertTrue(r3.is_auto_expired)
         self.assertEqual(inv.stock_quantity, 15)
         self.assertEqual(inv.availability_status, 'available')
+
+    def test_inventory_add_starts_empty_and_supports_typing_existing_or_new_medicine(self):
+        self.client.post(reverse('pharmacy_login'), {
+            'email': 'care@pharmacy.com',
+            'password': 'PharmPass123!',
+        })
+        cat = MedicineCategory.objects.create(category_name='Pain Relief')
+        existing_med = Medicine.objects.create(
+            category=cat,
+            medicine_name='Tempra',
+            generic_name='Paracetamol',
+            form='Syrup',
+            strength='120mg/5mL',
+        )
+
+        # GET Add page uses type-ahead input + empty hidden menu (no pre-populated <select name="medicine">)
+        get_res = self.client.get(reverse('inventory_add'))
+        self.assertEqual(get_res.status_code, 200)
+        self.assertNotContains(get_res, '<select name="medicine"')
+        self.assertContains(get_res, 'id="id_medicine_query"')
+        self.assertContains(get_res, 'id="pp-med-menu" role="listbox" hidden')
+
+        # Typing an existing catalog medicine name links it to inventory
+        post_existing = self.client.post(reverse('inventory_add'), {
+            'medicine_query': 'Tempra',
+            'price': '110.00',
+            'availability_status': Inventory.STATUS_AVAILABLE,
+            'stock_quantity': '25',
+        })
+        self.assertRedirects(post_existing, reverse('pharmacy_inventory'))
+        self.assertTrue(
+            Inventory.objects.filter(pharmacy=self.pharmacy, medicine=existing_med).exists()
+        )
+
+        # Duplicate typed medicine in the same pharmacy is rejected cleanly
+        post_dup = self.client.post(reverse('inventory_add'), {
+            'medicine_query': 'Tempra',
+            'price': '110.00',
+            'availability_status': Inventory.STATUS_AVAILABLE,
+            'stock_quantity': '10',
+        })
+        self.assertEqual(post_dup.status_code, 200)
+        self.assertContains(post_dup, 'is already in your inventory.')
+
+        # Typing a brand-new medicine normalizes casing/spacing, adds to catalog, and avoids duplicates
+        post_new = self.client.post(reverse('inventory_add'), {
+            'medicine_query': '  bioflu  ',
+            'new_category': str(cat.pk),
+            'new_generic_name': 'Phenylephrine + Chlorphenamine + Paracetamol',
+            'new_form': 'tablet',
+            'new_strength': '500 mg',
+            'price': '9.50',
+            'availability_status': Inventory.STATUS_AVAILABLE,
+            'stock_quantity': '40',
+        })
+        self.assertRedirects(post_new, reverse('pharmacy_inventory'))
+        created_med = Medicine.objects.get(medicine_name='Bioflu')
+        self.assertEqual(created_med.form, 'Tablet')
+        self.assertEqual(created_med.strength, '500mg')
+        self.assertTrue(
+            Inventory.objects.filter(pharmacy=self.pharmacy, medicine=created_med, stock_quantity=40).exists()
+        )
+
+        # A second pharmacy typing BIOFLU (with differing case/spacing) reuses the same Medicine row cleanly
+        self.client.get(reverse('pharmacy_logout'))
+        self.client.post(reverse('pharmacy_login'), {
+            'email': 'other@pharmacy.com',
+            'password': 'PharmPass123!',
+        })
+        post_second_pharmacy = self.client.post(reverse('inventory_add'), {
+            'medicine_query': 'BIOFLU',
+            'new_form': 'Tablet',
+            'new_strength': '500mg',
+            'price': '10.00',
+            'availability_status': Inventory.STATUS_AVAILABLE,
+            'stock_quantity': '15',
+        })
+        self.assertRedirects(post_second_pharmacy, reverse('pharmacy_inventory'))
+        self.assertEqual(Medicine.objects.filter(medicine_name__iexact='bioflu').count(), 1)
+        self.assertTrue(
+            Inventory.objects.filter(pharmacy=self.other_pharmacy, medicine=created_med, stock_quantity=15).exists()
+        )
+
+        # Browsing sees the combined availability across all pharmacies without duplicate Medicine cards
+        browse_res = self.client.get(reverse('public_browse'), {'q': 'Bioflu'})
+        self.assertContains(browse_res, 'In stock at 2 pharmacies')

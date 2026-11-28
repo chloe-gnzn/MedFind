@@ -3,20 +3,71 @@
 
 {% block page_header %}
 <h1 class="pp-title">{{ mode }} inventory item</h1>
-<p class="pp-sub">{% if mode == 'Edit' %}Update price, stock quantity, and availability status.{% else %}Pick a medicine from the catalog and set your price and stock.{% endif %}</p>
+<p class="pp-sub">{% if mode == 'Edit' %}Update price, stock quantity, and availability status.{% else %}Type the medicine you have to pick a matching catalog item or add a new medicine.{% endif %}</p>
 {% endblock %}
 
 {% block content %}
 <div class="panel narrow">
     <form method="post" novalidate>
         {% csrf_token %}
-        {% for field in form %}
-        <div class="form-group">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-        </div>
-        {% endfor %}
+
+        {% if mode == 'Edit' %}
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            {{ form.medicine }}
+            <div class="form-group pp-med-combobox" id="pp-med-combobox">
+                <label for="{{ form.medicine_query.id_for_label }}">{{ form.medicine_query.label }}</label>
+                {{ form.medicine_query }}
+                <div class="pp-suggest-menu" id="pp-med-menu" role="listbox" hidden></div>
+                {% if form.medicine_query.errors %}<ul class="errorlist">{% for e in form.medicine_query.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                {% if form.medicine.errors %}<ul class="errorlist">{% for e in form.medicine.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+
+            <div class="pp-new-med-box" id="pp-new-med-fields" {% if not form.new_category.value and not form.new_generic_name.value and not form.new_form.value and not form.new_strength.value %}hidden{% endif %}>
+                <p class="pp-new-med-note">Adding a medicine not yet in the catalog — optional details:</p>
+                <div class="pp-new-med-grid">
+                    <div class="form-group">
+                        <label for="{{ form.new_category.id_for_label }}">{{ form.new_category.label }}</label>
+                        {{ form.new_category }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.new_generic_name.id_for_label }}">{{ form.new_generic_name.label }}</label>
+                        {{ form.new_generic_name }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.new_form.id_for_label }}">{{ form.new_form.label }}</label>
+                        {{ form.new_form }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.new_strength.id_for_label }}">{{ form.new_strength.label }}</label>
+                        {{ form.new_strength }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.price.id_for_label }}">{{ form.price.label }}</label>
+                {{ form.price }}
+                {% if form.price.errors %}<ul class="errorlist">{% for e in form.price.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.availability_status.id_for_label }}">{{ form.availability_status.label }}</label>
+                {{ form.availability_status }}
+                {% if form.availability_status.errors %}<ul class="errorlist">{% for e in form.availability_status.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.stock_quantity.id_for_label }}">{{ form.stock_quantity.label }}</label>
+                {{ form.stock_quantity }}
+                {% if form.stock_quantity.errors %}<ul class="errorlist">{% for e in form.stock_quantity.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        {% endif %}
+
         {% if form.non_field_errors %}<ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
         <div class="actions" style="margin-top:8px">
             <button type="submit" class="btn">Save</button>
@@ -25,18 +76,133 @@
     </form>
 </div>
 
+{% if mode == 'Add' %}
+{{ available_medicines|json_script:"pp-medicine-catalog" }}
+{% endif %}
+
 <script>
 (function () {
     const stockInput = document.getElementById('id_stock_quantity');
     const statusSelect = document.getElementById('id_availability_status');
-    if (!stockInput || !statusSelect) return;
+    if (stockInput && statusSelect) {
+        stockInput.addEventListener('change', function () {
+            const qty = parseInt(stockInput.value, 10);
+            if (qty === 0) {
+                statusSelect.value = 'out_of_stock';
+            } else if (qty > 0 && statusSelect.value === 'out_of_stock') {
+                statusSelect.value = 'available';
+            }
+        });
+    }
 
-    stockInput.addEventListener('change', function () {
-        const qty = parseInt(stockInput.value, 10);
-        if (qty === 0) {
-            statusSelect.value = 'out_of_stock';
-        } else if (qty > 0 && statusSelect.value === 'out_of_stock') {
-            statusSelect.value = 'available';
+    const queryInput = document.getElementById('id_medicine_query');
+    const hiddenId = document.getElementById('id_medicine');
+    const menu = document.getElementById('pp-med-menu');
+    const combobox = document.getElementById('pp-med-combobox');
+    const newMedBox = document.getElementById('pp-new-med-fields');
+    const catalogEl = document.getElementById('pp-medicine-catalog');
+    if (!queryInput || !hiddenId || !menu || !combobox || !catalogEl) return;
+
+    const catalog = JSON.parse(catalogEl.textContent || '[]');
+
+    function closeMenu() {
+        menu.hidden = true;
+        menu.innerHTML = '';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function renderSuggestions() {
+        const raw = queryInput.value.trim();
+        if (!raw) {
+            closeMenu();
+            if (newMedBox) newMedBox.hidden = true;
+            return;
+        }
+        const term = raw.toLowerCase();
+        const matches = catalog.filter(function (m) {
+            return (
+                m.name.toLowerCase().includes(term) ||
+                m.generic.toLowerCase().includes(term) ||
+                m.label.toLowerCase().includes(term)
+            );
+        }).slice(0, 8);
+
+        let html = '';
+        matches.forEach(function (m) {
+            if (m.already_stocked) {
+                html +=
+                    '<div class="pp-suggest-item is-stocked" aria-disabled="true">' +
+                    '<strong>' + escapeHtml(m.name) + ' · Already in your inventory</strong>' +
+                    '<span class="pp-suggest-meta">' + escapeHtml(m.generic + ' · ' + m.strength + ' ' + m.form) + ' (edit it from Inventory)</span>' +
+                    '</div>';
+                return;
+            }
+            html +=
+                '<button type="button" class="pp-suggest-item" role="option" data-med-id="' + m.id + '" data-med-label="' + escapeHtml(m.label) + '">' +
+                '<strong>' + escapeHtml(m.name) + '</strong>' +
+                '<span class="pp-suggest-meta">' + escapeHtml(m.generic + ' · ' + m.strength + ' ' + m.form + ' · ' + m.category) + '</span>' +
+                '</button>';
+        });
+
+        const normTerm = term.replace(/[^a-z0-9]+/g, '');
+        const hasExact = matches.some(function (m) {
+            return (
+                m.name.toLowerCase().replace(/[^a-z0-9]+/g, '') === normTerm ||
+                m.label.toLowerCase().replace(/[^a-z0-9]+/g, '') === normTerm
+            );
+        });
+        if (!hasExact) {
+            html +=
+                '<button type="button" class="pp-suggest-item is-new" role="option" data-add-new="1">' +
+                '<strong>+ Add “' + escapeHtml(raw) + '” as a new medicine</strong>' +
+                '<span class="pp-suggest-meta">Save this medicine to the shared catalog &amp; your inventory</span>' +
+                '</button>';
+        }
+
+        menu.innerHTML = html;
+        menu.hidden = !html;
+    }
+
+    queryInput.addEventListener('input', function () {
+        hiddenId.value = '';
+        renderSuggestions();
+    });
+
+    queryInput.addEventListener('focus', function () {
+        if (queryInput.value.trim() && !hiddenId.value) {
+            renderSuggestions();
+        }
+    });
+
+    menu.addEventListener('click', function (event) {
+        const btn = event.target.closest('.pp-suggest-item');
+        if (!btn || btn.classList.contains('is-stocked')) return;
+        if (btn.dataset.addNew) {
+            hiddenId.value = '';
+            if (newMedBox) newMedBox.hidden = false;
+            closeMenu();
+            return;
+        }
+        hiddenId.value = btn.dataset.medId || '';
+        queryInput.value = btn.dataset.medLabel || '';
+        if (newMedBox) newMedBox.hidden = true;
+        closeMenu();
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!combobox.contains(event.target)) {
+            closeMenu();
+        }
+    });
+
+    queryInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeMenu();
         }
     });
 })();
