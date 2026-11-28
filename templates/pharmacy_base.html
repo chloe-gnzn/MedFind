@@ -26,15 +26,17 @@
             <a href="{% url 'pharmacy_inventory' %}" {% if 'inventory' in page %}class="active" aria-current="page"{% endif %}>Inventory</a>
             <a href="{% url 'pharmacy_hours' %}" {% if page == 'pharmacy_hours' %}class="active" aria-current="page"{% endif %}>Operating hours</a>
             <a href="{% url 'pharmacy_verification' %}" {% if page == 'pharmacy_verification' %}class="active" aria-current="page"{% endif %}>Verification</a>
+            <a href="{% url 'pharmacy_activity' %}" {% if page == 'pharmacy_activity' %}class="active" aria-current="page"{% endif %}>Activity log</a>
         </nav>
         {% endwith %}
 
-        {# Profile button (menu: Log Out). Icon = static/home/icon-profile.png #}
+        {# Profile button (menu: My Profile, Log Out). Icon = static/home/icon-profile.png #}
         <details class="home-profile">
             <summary aria-label="Account menu">
                 <span class="mask-icon home-profile-icon" aria-hidden="true"></span>
             </summary>
             <nav class="home-profile-menu">
+                <a href="{% url 'pharmacy_profile' %}">My Profile</a>
                 <a href="{% url 'pharmacy_logout' %}" class="logout">Log Out</a>
             </nav>
         </details>

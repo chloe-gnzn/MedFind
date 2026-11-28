@@ -6,11 +6,13 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_time
 from django.views.decorators.http import require_POST
 
+from admin_app.models import ActivityLog
+from login_app.forms import AccountPasswordChangeForm
 from login_app.utils import log_activity
 from medfind_project.session_auth import ROLE_HOME, SESSION_ROLE, get_account, role_required
 from register_app.forms import PharmacyRegisterForm
 
-from .forms import InventoryForm, VerificationUploadForm
+from .forms import InventoryForm, PharmacyProfileForm, VerificationUploadForm
 from .models import Inventory, OperatingHours, PharmacyVerification
 
 
@@ -204,4 +206,70 @@ def verification_view(request):
         'submissions': submissions,
         'has_pending': has_pending,
         'pharmacy': pharmacy,
+    })
+
+
+# Profile & Activity
+
+ACTIVITY_GROUPS = {
+    'inventory': ('inventory_add', 'inventory_update', 'inventory_remove'),
+    'hours': ('hours_update',),
+    'verification': ('verification_submit',),
+    'account': ('register', 'login', 'logout', 'profile_update', 'password_change', 'password_reset'),
+}
+
+
+@role_required('pharmacy')
+def profile_view(request):
+    pharmacy = request.account
+    profile_form = PharmacyProfileForm(instance=pharmacy)
+    password_form = AccountPasswordChangeForm(account=pharmacy)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'update_profile':
+            profile_form = PharmacyProfileForm(request.POST, instance=pharmacy)
+            if profile_form.is_valid():
+                updated = profile_form.save()
+                log_activity('pharmacy', updated.pk, 'profile_update',
+                             f'Updated pharmacy profile for {updated.business_name}.')
+                messages.success(request, 'Pharmacy profile updated.')
+                return redirect('pharmacy_profile')
+        elif action == 'change_password':
+            password_form = AccountPasswordChangeForm(request.POST, account=pharmacy)
+            if password_form.is_valid():
+                updated = password_form.save()
+                log_activity('pharmacy', updated.pk, 'password_change',
+                             f'Pharmacy {updated.email} changed password.')
+                messages.success(request, 'Your password has been changed.')
+                return redirect('pharmacy_profile')
+
+    return render(request, 'pharmacy_template/profile.html', {
+        'pharmacy': pharmacy,
+        'profile_form': profile_form,
+        'password_form': password_form,
+        'favorite_count': pharmacy.favorites.count(),
+        'item_count': Inventory.objects.filter(pharmacy=pharmacy).count(),
+        'activity_count': ActivityLog.objects.filter(
+            actor_type=ActivityLog.ACTOR_PHARMACY, actor_id=pharmacy.pk
+        ).count(),
+    })
+
+
+@role_required('pharmacy')
+def activity_view(request):
+    pharmacy = request.account
+    group = request.GET.get('group', 'all').strip()
+    logs = ActivityLog.objects.filter(
+        actor_type=ActivityLog.ACTOR_PHARMACY,
+        actor_id=pharmacy.pk,
+    )
+    if group in ACTIVITY_GROUPS:
+        logs = logs.filter(action__in=ACTIVITY_GROUPS[group])
+    else:
+        group = 'all'
+
+    return render(request, 'pharmacy_template/activity.html', {
+        'logs': logs[:200],
+        'group': group,
     })

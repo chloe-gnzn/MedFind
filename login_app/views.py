@@ -6,7 +6,7 @@ from medfind_project.session_auth import (
     get_account, login_account, logout_account,
 )
 
-from .forms import ForgotPasswordForm, LoginForm
+from .forms import ForgotPasswordForm, LoginForm, PharmacyForgotPasswordForm
 from .utils import log_activity
 
 LOGIN_PAGES = {
@@ -62,22 +62,37 @@ def admin_login_view(request):
     return _login(request, 'admin')
 
 
-def forgot_password_view(request):
-    """Allow a user to reset their password after verifying email and phone number."""
+def _forgot_password(request, form_class, role, login_url, role_label=''):
     if get_account(request):
         return redirect(ROLE_HOME[request.session[SESSION_ROLE]])
 
     if request.method == 'POST':
-        form = ForgotPasswordForm(request.POST)
+        form = form_class(request.POST)
         if form.is_valid():
-            user = form.save()
-            log_activity('user', user.pk, 'password_reset', f'User {user.email} reset password.')
+            account = form.save()
+            log_activity(role, account.pk, 'password_reset', f'{role.title()} {account.email} reset password.')
             messages.success(request, 'Password updated! You can now log in with your new password.')
-            return redirect('login')
+            return redirect(login_url)
     else:
-        form = ForgotPasswordForm()
+        form = form_class()
 
-    return render(request, 'login_template/forgot_password.html', {'form': form})
+    return render(request, 'login_template/forgot_password.html', {
+        'form': form,
+        'login_url': login_url,
+        'role_label': role_label,
+    })
+
+
+def forgot_password_view(request):
+    """Allow a user to reset their password after verifying email and phone number."""
+    return _forgot_password(request, ForgotPasswordForm, 'user', 'login')
+
+
+def pharmacy_forgot_password_view(request):
+    """Allow a pharmacy to reset its password after verifying email and contact number."""
+    return _forgot_password(
+        request, PharmacyForgotPasswordForm, 'pharmacy', 'pharmacy_login', role_label='Pharmacy Portal'
+    )
 
 
 def logout_view(request):

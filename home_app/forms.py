@@ -1,8 +1,10 @@
 from django import forms
-from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError
 
+from login_app.forms import AccountPasswordChangeForm
 from .models import User
+
+UserPasswordChangeForm = AccountPasswordChangeForm
 
 
 class UserProfileForm(forms.ModelForm):
@@ -34,60 +36,3 @@ class UserProfileForm(forms.ModelForm):
         if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
             raise ValidationError('Another account is already using this email address.')
         return email
-
-
-class UserPasswordChangeForm(forms.Form):
-    """Allow a logged-in user to change their password."""
-
-    current_password = forms.CharField(
-        label='Current Password',
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Current password',
-            'autocomplete': 'current-password',
-        }),
-    )
-    new_password1 = forms.CharField(
-        label='New Password',
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'New password',
-            'autocomplete': 'new-password',
-        }),
-    )
-    new_password2 = forms.CharField(
-        label='Confirm New Password',
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Confirm new password',
-            'autocomplete': 'new-password',
-        }),
-    )
-
-    def __init__(self, *args, user=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.user = user
-
-    def clean_current_password(self):
-        current = self.cleaned_data.get('current_password')
-        if self.user and not self.user.check_password(current):
-            raise ValidationError('Current password is incorrect.')
-        return current
-
-    def clean(self):
-        cleaned = super().clean()
-        p1 = cleaned.get('new_password1')
-        p2 = cleaned.get('new_password2')
-        if p1 and p2 and p1 != p2:
-            self.add_error('new_password2', "The two new passwords don't match.")
-        if p1:
-            try:
-                password_validation.validate_password(p1)
-            except ValidationError as error:
-                self.add_error('new_password1', error)
-        return cleaned
-
-    def save(self):
-        self.user.set_password(self.cleaned_data['new_password1'])
-        self.user.save(update_fields=['password_hash', 'updated_at'])
-        return self.user

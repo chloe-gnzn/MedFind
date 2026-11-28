@@ -1,0 +1,44 @@
+{% extends 'pharmacy_base.html' %}
+{% block title %}Activity Log{% endblock %}
+
+{% block page_header %}
+<h1 class="pp-title">Activity Log</h1>
+<p class="pp-sub">Recent changes to your pharmacy account, inventory, operating hours, and verification.</p>
+{% endblock %}
+
+{% block content %}
+<nav class="pp-chips" aria-label="Filter pharmacy activity">
+    <a class="pp-chip {% if group == 'all' %}active{% endif %}" href="{% url 'pharmacy_activity' %}">All</a>
+    <a class="pp-chip {% if group == 'inventory' %}active{% endif %}" href="{% url 'pharmacy_activity' %}?group=inventory">Inventory</a>
+    <a class="pp-chip {% if group == 'hours' %}active{% endif %}" href="{% url 'pharmacy_activity' %}?group=hours">Operating Hours</a>
+    <a class="pp-chip {% if group == 'verification' %}active{% endif %}" href="{% url 'pharmacy_activity' %}?group=verification">Verification</a>
+    <a class="pp-chip {% if group == 'account' %}active{% endif %}" href="{% url 'pharmacy_activity' %}?group=account">Account</a>
+</nav>
+
+<div class="panel">
+    {% if logs %}
+    <div class="table-wrap">
+    <table class="data">
+        <thead>
+            <tr>
+                <th>When</th>
+                <th>Action</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for l in logs %}
+            <tr>
+                <td class="muted">{{ l.created_at|date:"M d, Y g:i A" }}</td>
+                <td><span class="badge">{{ l.action }}</span></td>
+                <td>{{ l.description }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+        <div class="empty">No activity recorded for this filter yet.</div>
+    {% endif %}
+</div>
+{% endblock %}

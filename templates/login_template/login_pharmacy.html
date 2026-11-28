@@ -50,8 +50,7 @@
                             {% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}
                         </ul>
                     {% endif %}
-                    {# TODO: point this at your password-reset URL once it exists #}
-                    <a class="login-forgot" href="#">Forgot Password?</a>
+                    <a class="login-forgot" href="{% url 'pharmacy_forgot_password' %}">Forgot Password?</a>
                 </div>
 
                 {% if form.non_field_errors %}

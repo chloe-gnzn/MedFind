@@ -1,0 +1,78 @@
+{% extends 'pharmacy_base.html' %}
+{% block title %}Pharmacy Profile{% endblock %}
+
+{% block page_header %}
+<h1 class="pp-title">Pharmacy Profile</h1>
+<p class="pp-sub">Manage your business contact details and account password.</p>
+{% endblock %}
+
+{% block page_actions %}
+<a class="btn secondary" href="{% url 'pharmacy_dashboard' %}">← Back to Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid">
+    <a class="stat" href="{% url 'pharmacy_verification' %}">
+        <div class="num" style="font-size:30px;padding:4px 0">{{ pharmacy.get_verification_status_display }}</div>
+        <div class="lbl">Verification status · {% if pharmacy.is_active %}Active{% else %}Inactive{% endif %}</div>
+    </a>
+    <div class="stat">
+        <div class="num">{{ favorite_count }}</div>
+        <div class="lbl">Customers favorited you</div>
+    </div>
+    <a class="stat" href="{% url 'pharmacy_activity' %}">
+        <div class="num">{{ activity_count }}</div>
+        <div class="lbl">Activity log events</div>
+    </a>
+    <div class="stat">
+        <div class="num" style="font-size:26px;padding:6px 0">{{ pharmacy.created_at|date:"M d, Y" }}</div>
+        <div class="lbl">Member since · Updated {{ pharmacy.updated_at|date:"M d, Y" }}</div>
+    </div>
+</div>
+
+<div class="pp-two-col">
+    <section class="panel">
+        <h2>Business Details</h2>
+        <form method="post" action="{% url 'pharmacy_profile' %}" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_profile">
+
+            {% for field in profile_form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            {% endfor %}
+
+            {% if profile_form.non_field_errors %}
+            <ul class="errorlist">{% for e in profile_form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+
+            <button type="submit" class="btn">Save Changes</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Change Password</h2>
+        <form method="post" action="{% url 'pharmacy_profile' %}" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="change_password">
+
+            {% for field in password_form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            {% endfor %}
+
+            {% if password_form.non_field_errors %}
+            <ul class="errorlist">{% for e in password_form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+
+            <button type="submit" class="btn">Update Password</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

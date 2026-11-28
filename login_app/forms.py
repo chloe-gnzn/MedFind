@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 
 from home_app.models import User
 from medfind_project.session_auth import get_account_model
+from pharmacy_app.models import Pharmacy
 
 
 def normalize_phone(value):
@@ -88,8 +89,13 @@ class LoginForm(forms.Form):
         return cleaned
 
 
-class ForgotPasswordForm(forms.Form):
-    """Reset a user's password by verifying their registered email and phone number."""
+class BaseForgotPasswordForm(forms.Form):
+    """Shared password-reset validation across User and Pharmacy accounts."""
+
+    model = None
+    phone_field = 'phone_number'
+    phone_label = 'Registered Phone Number:'
+    not_found_msg = 'No account matched that email and phone number.'
 
     email = forms.EmailField(
         label='Registered Email:',
@@ -125,7 +131,11 @@ class ForgotPasswordForm(forms.Form):
         }),
     )
 
-    user = None
+    account = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['phone_number'].label = self.phone_label
 
     def clean(self):
         cleaned = super().clean()
@@ -138,13 +148,14 @@ class ForgotPasswordForm(forms.Form):
             self.add_error('new_password2', "The two passwords don't match.")
 
         if email and phone:
-            user = User.objects.filter(email__iexact=email).first()
+            account = self.model.objects.filter(email__iexact=email).first()
             norm_input = normalize_phone(phone)
-            if user is None or not norm_input or normalize_phone(user.phone_number) != norm_input:
-                raise ValidationError('No account matched that email and phone number.')
-            self.user = user
+            stored_phone = getattr(account, self.phone_field, '') if account else ''
+            if account is None or not norm_input or normalize_phone(stored_phone) != norm_input:
+                raise ValidationError(self.not_found_msg)
+            self.account = account
 
-        if p1 and self.user:
+        if p1 and self.account:
             try:
                 password_validation.validate_password(p1)
             except ValidationError as error:
@@ -153,6 +164,80 @@ class ForgotPasswordForm(forms.Form):
         return cleaned
 
     def save(self):
-        self.user.set_password(self.cleaned_data['new_password1'])
-        self.user.save(update_fields=['password_hash', 'updated_at'])
-        return self.user
+        self.account.set_password(self.cleaned_data['new_password1'])
+        self.account.save(update_fields=['password_hash', 'updated_at'])
+        return self.account
+
+
+class ForgotPasswordForm(BaseForgotPasswordForm):
+    """Reset a user's password by verifying registered email and phone number."""
+
+    model = User
+    phone_field = 'phone_number'
+    phone_label = 'Registered Phone Number:'
+
+
+class PharmacyForgotPasswordForm(BaseForgotPasswordForm):
+    """Reset a pharmacy's password by verifying registered email and contact number."""
+
+    model = Pharmacy
+    phone_field = 'contact_number'
+    phone_label = 'Registered Contact Number:'
+    not_found_msg = 'No pharmacy account matched that email and contact number.'
+
+
+class AccountPasswordChangeForm(forms.Form):
+    """Allow a logged-in User or Pharmacy account to change its password."""
+
+    current_password = forms.CharField(
+        label='Current Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Current password',
+            'autocomplete': 'current-password',
+        }),
+    )
+    new_password1 = forms.CharField(
+        label='New Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'New password',
+            'autocomplete': 'new-password',
+        }),
+    )
+    new_password2 = forms.CharField(
+        label='Confirm New Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Confirm new password',
+            'autocomplete': 'new-password',
+        }),
+    )
+
+    def __init__(self, *args, account=None, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.account = account if account is not None else user
+
+    def clean_current_password(self):
+        current = self.cleaned_data.get('current_password')
+        if self.account and not self.account.check_password(current):
+            raise ValidationError('Current password is incorrect.')
+        return current
+
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get('new_password1')
+        p2 = cleaned.get('new_password2')
+        if p1 and p2 and p1 != p2:
+            self.add_error('new_password2', "The two new passwords don't match.")
+        if p1:
+            try:
+                password_validation.validate_password(p1)
+            except ValidationError as error:
+                self.add_error('new_password1', error)
+        return cleaned
+
+    def save(self):
+        self.account.set_password(self.cleaned_data['new_password1'])
+        self.account.save(update_fields=['password_hash', 'updated_at'])
+        return self.account

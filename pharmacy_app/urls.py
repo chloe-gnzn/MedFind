@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('login/', login_views.pharmacy_login_view, name='pharmacy_login'),
+    path('forgot-password/', login_views.pharmacy_forgot_password_view, name='pharmacy_forgot_password'),
     path('register/', views.pharmacy_register_view, name='register_pharmacy'),
     path('logout/', login_views.logout_view, name='pharmacy_logout'),
 
@@ -14,4 +15,6 @@ urlpatterns = [
     path('inventory/<int:inventory_id>/delete/', views.inventory_delete_view, name='inventory_delete'),
     path('hours/', views.hours_view, name='pharmacy_hours'),
     path('verification/', views.verification_view, name='pharmacy_verification'),
+    path('profile/', views.profile_view, name='pharmacy_profile'),
+    path('activity/', views.activity_view, name='pharmacy_activity'),
 ]
