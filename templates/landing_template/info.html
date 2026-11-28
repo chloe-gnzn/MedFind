@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MedFind | {{ page.title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@400;600;700;800&family=Inter:wght@400;700&family=Laila:wght@600&family=Lalezar&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<header class="lp-nav">
+    <a class="lp-logo" href="{% url 'landing' %}" aria-label="MedFind home">MedFind<span>+</span></a>
+    <nav class="lp-links" aria-label="Page sections">
+        <a href="{% url 'landing' %}#top">Home</a>
+        <a href="{% url 'landing' %}#about">About</a>
+        <a href="{% url 'landing' %}#features">Features</a>
+    </nav>
+    <div class="lp-auth">
+        <a class="lp-login" href="{% url 'login' %}">Log In</a>
+        <a class="lp-cta" href="{% url 'register' %}">Get Started</a>
+    </div>
+</header>
+
+<main class="lp-page" style="padding: 24px 24px 72px;">
+    <section class="lp-note" style="margin-top: 12px;">
+        <h1 style="font-family: var(--display); font-size: clamp(36px, 5vw, 58px); color: var(--navy); font-weight: 400; line-height: 1.1;">{{ page.title }}</h1>
+        <p style="margin-top: 8px; font-size: 16px; color: var(--plus);">{{ page.subtitle }}</p>
+
+        <div style="margin-top: 28px; display: grid; gap: 22px;">
+            {% for heading, body in page.sections %}
+            <div>
+                <h2 style="font-size: 20px; color: var(--navy); margin-bottom: 6px;">{{ heading }}</h2>
+                <p style="font-size: 16px; line-height: 1.6; color: var(--body-text);">{{ body }}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-top: 32px;">
+            <a class="lp-cta" style="font-size: 16px; padding: 10px 24px;" href="{% url 'landing' %}">← Back to Home</a>
+        </div>
+    </section>
+</main>
+
+<footer class="lp-footer">
+    <div class="lp-foot-grid">
+        <div class="lp-foot-brand">
+            <a class="lp-logo" href="{% url 'landing' %}">MedFind<span>+</span></a>
+            <p>The all-in-one medicine finder connecting customers and verified pharmacies for faster, easier access to the medicine you need.</p>
+        </div>
+
+        <div class="lp-foot-col">
+            <h4>Product</h4>
+            <a href="{% url 'landing' %}#how-it-works">How it works</a>
+            <a href="{% url 'landing' %}#features">Features</a>
+            <a href="{% url 'login' %}">Browse medicines</a>
+            <a href="{% url 'login' %}">Log in</a>
+            <a href="{% url 'register' %}">Sign up</a>
+
+            <h4 class="gap">Legal</h4>
+            <a href="{% url 'landing_privacy' %}">Privacy</a>
+            <a href="{% url 'landing_terms' %}">Terms</a>
+            <a href="{% url 'landing_security' %}">Security</a>
+        </div>
+
+        <div class="lp-foot-col">
+            <h4>Company</h4>
+            <a href="{% url 'landing' %}#about">About</a>
+            <a href="{% url 'landing_contact' %}">Contact</a>
+            <a href="{% url 'landing_privacy' %}">Privacy policy</a>
+            <a href="{% url 'landing_terms' %}">Terms</a>
+        </div>
+    </div>
+    <p class="lp-copy">© 2026 Ambera. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

@@ -128,6 +128,23 @@ class UserPortalTests(TestCase):
         self.assertContains(res_open, 'Sunrise Pharmacy')
         self.assertNotContains(res_open, 'Midnight Closed Pharmacy')
 
+    def test_home_shows_empty_state_with_no_placeholder_pharmacies(self):
+        Pharmacy.objects.all().delete()
+        res = self.client.get(reverse('home'))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'No verified pharmacies yet')
+        self.assertNotContains(res, 'Rosepharmacy')
+        self.assertNotContains(res, 'South Star Drug')
+
+    def test_landing_and_footer_info_pages_render_without_dead_links(self):
+        self.client.get(reverse('logout'))
+        landing_res = self.client.get(reverse('landing'))
+        self.assertEqual(landing_res.status_code, 200)
+        self.assertNotContains(landing_res, 'href="#"')
+        for url_name in ('landing_privacy', 'landing_terms', 'landing_security', 'landing_contact'):
+            info_res = self.client.get(reverse(url_name))
+            self.assertEqual(info_res.status_code, 200)
+
     def test_search_filters_sort_and_records_history(self):
         res = self.client.get(reverse('search'), {
             'q': 'Biogesic',

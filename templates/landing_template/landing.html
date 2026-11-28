@@ -118,17 +118,17 @@
             <a href="{% url 'register' %}">Sign up</a>
 
             <h4 class="gap">Legal</h4>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Security</a>
+            <a href="{% url 'landing_privacy' %}">Privacy</a>
+            <a href="{% url 'landing_terms' %}">Terms</a>
+            <a href="{% url 'landing_security' %}">Security</a>
         </div>
 
         <div class="lp-foot-col">
             <h4>Company</h4>
             <a href="#about">About</a>
-            <a href="#">Contact</a>
-            <a href="#">Privacy policy</a>
-            <a href="#">Terms</a>
+            <a href="{% url 'landing_contact' %}">Contact</a>
+            <a href="{% url 'landing_privacy' %}">Privacy policy</a>
+            <a href="{% url 'landing_terms' %}">Terms</a>
         </div>
     </div>
     <p class="lp-copy">© 2026 Ambera. All rights reserved.</p>

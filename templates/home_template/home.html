@@ -15,7 +15,6 @@
 {% endblock %}
 
 {% block content %}
-{% if not use_placeholders %}
 <div class="hm-filter-bar">
     <p class="hm-filter-note">Showing verified pharmacies{% if open_only %} currently open{% endif %}.</p>
     <div class="sr-chips" aria-label="Filter pharmacies">
@@ -23,7 +22,6 @@
         <a class="sr-chip {% if open_only %}active{% endif %}" href="{% url 'home' %}?open=1">Open Now</a>
     </div>
 </div>
-{% endif %}
 
 {% if pharmacies %}
 <div class="home-grid">
@@ -33,7 +31,6 @@
 
             <div class="ph-photo">
                 {% if p.photo %}<img src="{{ p.photo.url }}" alt="{{ p.business_name }}">{% endif %}
-                {% if not use_placeholders %}
                 <form class="ph-fav-form fav-ajax-form" method="post" action="{% url 'toggle_favorite' 'pharmacy' p.pharmacy_id %}">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -44,7 +41,6 @@
                         {% if p.is_favorite %}♥{% else %}♡{% endif %}
                     </button>
                 </form>
-                {% endif %}
             </div>
 
             <h2 class="ph-name">{{ p.business_name }}</h2>
@@ -67,19 +63,15 @@
                 {% endif %}
             </p>
 
-            {% if use_placeholders %}
-            <a class="ph-btn" href="{% url 'search' %}">Check Stocks</a>
-            {% else %}
             <a class="ph-btn" href="{% url 'pharmacy_detail' p.pharmacy_id %}">Check Stocks</a>
-            {% endif %}
         </div>
     </article>
     {% endfor %}
 </div>
 {% else %}
     <div class="sr-empty">
-        <strong>{% if open_only %}No pharmacies are open right now{% else %}No pharmacies yet{% endif %}</strong>
-        <span>{% if open_only %}<a href="{% url 'home' %}">Show all verified pharmacies</a>{% else %}Check back soon!{% endif %}</span>
+        <strong>{% if open_only %}No pharmacies are open right now{% else %}No verified pharmacies yet{% endif %}</strong>
+        <span>{% if open_only %}<a href="{% url 'home' %}">Show all verified pharmacies</a>{% else %}Verified pharmacies will appear here once approved by an admin.{% endif %}</span>
     </div>
 {% endif %}
 {% endblock %}

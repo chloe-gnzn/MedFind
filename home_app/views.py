@@ -54,24 +54,6 @@ def _user_favorite_ids(user):
     return med_ids, pharm_ids
 
 
-# Demo cards shown only while there are no approved pharmacies in the database.
-# They disappear automatically once real pharmacies exist.
-PLACEHOLDER_PHARMACIES = [
-    {'business_name': 'Rosepharmacy', 'address': 'Circo Centrum Building, Fuente Osmena Circle, Cebu City',
-     'open_now': True, 'hours_text': '8AM - 10PM'},
-    {'business_name': 'Mercury Drug', 'address': 'Osmena Boulevard, Capitol Site, Cebu City',
-     'open_now': True, 'hours_text': '24 hours'},
-    {'business_name': 'Watsons Pharmacy', 'address': 'Ayala Center Cebu, Cebu Business Park, Cebu City',
-     'open_now': False, 'hours_text': '10AM - 9PM'},
-    {'business_name': 'Generika Drugstore', 'address': 'Jones Avenue, Cebu City',
-     'open_now': True, 'hours_text': '7AM - 9PM'},
-    {'business_name': 'South Star Drug', 'address': 'Colon Street, Cebu City',
-     'open_now': None, 'hours_text': ''},
-    {'business_name': 'Rose Pharmacy IT Park', 'address': 'Lahug, Cebu IT Park, Cebu City',
-     'open_now': True, 'hours_text': '8AM - 10PM'},
-]
-
-
 @role_required('user')
 def home_view(request):
     open_only = request.GET.get('open') == '1'
@@ -82,15 +64,11 @@ def home_view(request):
     for p in pharmacies:
         p.is_favorite = p.pk in fav_pharmacy_ids
 
-    use_placeholders = not pharmacies
-    if use_placeholders:
-        pharmacies = PLACEHOLDER_PHARMACIES
-    elif open_only:
+    if open_only:
         pharmacies = [p for p in pharmacies if p.open_now]
 
     return render(request, 'home_template/home.html', {
         'pharmacies': pharmacies,
-        'use_placeholders': use_placeholders,
         'open_only': open_only,
     })
 
