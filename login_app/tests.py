@@ -16,6 +16,7 @@ class LoginAndForgotPasswordTests(TestCase):
         self.user.save()
 
     def test_user_can_login_with_email(self):
+        self.assertEqual(reverse('login'), '/login/')
         res = self.client.post(reverse('login'), {
             'email': 'ANA@EXAMPLE.COM',
             'password': 'StrongPass123!',

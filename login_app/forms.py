@@ -41,7 +41,7 @@ class LoginForm(forms.Form):
     account = None  # filled in by clean() when the credentials are valid
 
     def __init__(self, *args, role='user', **kwargs):
-        # The role is decided by WHICH login page is used (/login/login/, /pharmacy-portal/login/,
+        # The role is decided by WHICH login page is used (/login/, /pharmacy-portal/login/,
         # /manage/login/), not by a dropdown the visitor can change.
         super().__init__(*args, **kwargs)
         self.role = role
