@@ -33,7 +33,27 @@
 <div class="pp-two-col">
     <section class="panel">
         <h2>Business Details</h2>
-        <form method="post" action="{% url 'pharmacy_profile' %}" novalidate>
+        <div class="pp-photo-preview" id="pp-photo-preview">
+            {% if pharmacy.photo %}
+                <img src="{{ pharmacy.photo.url }}" alt="{{ pharmacy.business_name }} storefront">
+            {% else %}
+                <span>No storefront photo yet</span>
+            {% endif %}
+        </div>
+        {% if pharmacy.photo %}
+        <form method="post"
+              action="{% url 'pharmacy_profile' %}"
+              class="inline"
+              style="display:inline-block;margin-bottom:16px"
+              data-confirm-title="Remove storefront photo"
+              data-confirm="Remove your pharmacy's storefront picture? Users will see the default placeholder until you upload a new one.">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove_photo">
+            <button type="submit" class="btn danger small">Remove Photo</button>
+        </form>
+        {% endif %}
+
+        <form method="post" action="{% url 'pharmacy_profile' %}" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             <input type="hidden" name="action" value="update_profile">
 
@@ -75,4 +95,26 @@
         </form>
     </section>
 </div>
+
+<script>
+(function () {
+    const fileInput = document.getElementById('id_photo');
+    const preview = document.getElementById('pp-photo-preview');
+    if (!fileInput || !preview) return;
+
+    fileInput.addEventListener('change', function () {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            preview.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.alt = 'Selected pharmacy photo preview';
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+})();
+</script>
 {% endblock %}

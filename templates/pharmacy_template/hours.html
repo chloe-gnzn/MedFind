@@ -1,25 +1,90 @@
 {% extends 'pharmacy_base.html' %}
 {% block title %}Operating hours{% endblock %}
+
 {% block page_header %}
 <h1 class="pp-title">Operating hours</h1>
-<p class="pp-sub">Customers see whether you're open based on these hours.</p>
+<p class="pp-sub">Customers see whether you're open based on these hours. Overnight and 24-hour schedules are supported.</p>
 {% endblock %}
+
 {% block content %}
+<div class="pp-chips" aria-label="Schedule presets">
+    <button type="button" class="pp-chip" id="pp-copy-weekdays">Copy Monday to Weekdays (Mon–Fri)</button>
+    <button type="button" class="pp-chip" id="pp-copy-all">Copy Monday to All Days</button>
+    <button type="button" class="pp-chip" id="pp-set-24h">Set Open Days to 24 Hours</button>
+</div>
+
 <div class="panel">
     <form method="post">
         {% csrf_token %}
         <table class="data hours-table">
-            <tr><th>Day</th><th>Opens</th><th>Closes</th><th>Closed all day</th></tr>
+            <thead>
+                <tr><th>Day</th><th>Opens</th><th>Closes</th><th>Closed all day</th></tr>
+            </thead>
+            <tbody>
             {% for r in rows %}
-            <tr>
+            <tr class="pp-hours-row {% if r.is_closed %}is-closed{% endif %}" data-day="{{ r.day }}">
                 <td><strong>{{ r.label }}</strong></td>
                 <td><input type="time" name="open_{{ r.day }}" value="{{ r.opening|time:'H:i' }}"></td>
                 <td><input type="time" name="close_{{ r.day }}" value="{{ r.closing|time:'H:i' }}"></td>
                 <td><input type="checkbox" name="closed_{{ r.day }}" {% if r.is_closed %}checked{% endif %}></td>
             </tr>
             {% endfor %}
+            </tbody>
         </table>
         <div style="margin-top:16px"><button type="submit" class="btn">Save hours</button></div>
     </form>
 </div>
+
+<script>
+(function () {
+    const rows = Array.from(document.querySelectorAll('.pp-hours-row'));
+
+    function syncClosedState(row) {
+        const cb = row.querySelector('input[type="checkbox"]');
+        row.classList.toggle('is-closed', Boolean(cb && cb.checked));
+    }
+
+    rows.forEach(function (row) {
+        const cb = row.querySelector('input[type="checkbox"]');
+        if (cb) cb.addEventListener('change', function () { syncClosedState(row); });
+    });
+
+    function copyMonday(maxDayIndex) {
+        const mon = rows[0];
+        if (!mon) return;
+        const monOpen = mon.querySelector('input[name="open_0"]').value;
+        const monClose = mon.querySelector('input[name="close_0"]').value;
+        const monClosed = mon.querySelector('input[name="closed_0"]').checked;
+
+        rows.forEach(function (row) {
+            const day = parseInt(row.dataset.day, 10);
+            if (day >= 1 && day <= maxDayIndex) {
+                row.querySelector('input[name="open_' + day + '"]').value = monOpen;
+                row.querySelector('input[name="close_' + day + '"]').value = monClose;
+                row.querySelector('input[name="closed_' + day + '"]').checked = monClosed;
+                syncClosedState(row);
+            }
+        });
+    }
+
+    const btnWeekdays = document.getElementById('pp-copy-weekdays');
+    const btnAll = document.getElementById('pp-copy-all');
+    const btn24 = document.getElementById('pp-set-24h');
+
+    if (btnWeekdays) btnWeekdays.addEventListener('click', function () { copyMonday(4); });
+    if (btnAll) btnAll.addEventListener('click', function () { copyMonday(6); });
+    if (btn24) {
+        btn24.addEventListener('click', function () {
+            rows.forEach(function (row) {
+                const cb = row.querySelector('input[type="checkbox"]');
+                if (cb && !cb.checked) {
+                    const day = row.dataset.day;
+                    row.querySelector('input[name="open_' + day + '"]').value = '00:00';
+                    row.querySelector('input[name="close_' + day + '"]').value = '23:59';
+                }
+            });
+        });
+    }
+})();
+</script>
 {% endblock %}

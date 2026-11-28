@@ -1,9 +1,11 @@
 {% extends 'pharmacy_base.html' %}
 {% block title %}Verification{% endblock %}
+
 {% block page_header %}
 <h1 class="pp-title">Pharmacy verification</h1>
 <p class="pp-sub">Customers only see verified pharmacies. Upload your business permit or pharmacy license for an admin to review.</p>
 {% endblock %}
+
 {% block content %}
 
 <div class="banner {{ pharmacy.verification_status }}">
@@ -11,7 +13,7 @@
 </div>
 
 {% if has_pending %}
-    <div class="panel"><div class="empty">You have a submission waiting for review. You'll be able to submit again if it is rejected.</div></div>
+    <div class="panel"><div class="empty">You have a submission waiting for review. If you uploaded the wrong file, you can withdraw the pending submission below and upload a new one.</div></div>
 {% elif pharmacy.verification_status != 'approved' %}
 <div class="panel narrow">
     <h2>Submit a document</h2>
@@ -30,8 +32,12 @@
 <div class="panel">
     <h2>Submission history</h2>
     {% if submissions %}
+    <div class="table-wrap">
     <table class="data">
-        <tr><th>#</th><th>Document</th><th>Status</th><th>Reviewed</th><th>Remarks</th></tr>
+        <thead>
+            <tr><th>#</th><th>Document</th><th>Status</th><th>Reviewed</th><th>Remarks</th><th></th></tr>
+        </thead>
+        <tbody>
         {% for s in submissions %}
         <tr>
             <td>{{ s.verification_id }}</td>
@@ -39,9 +45,23 @@
             <td><span class="badge {{ s.status }}">{{ s.get_status_display }}</span></td>
             <td class="muted">{% if s.reviewed_at %}{{ s.reviewed_at|date:"M d, Y" }} by {{ s.reviewed_by.first_name|default:"admin" }}{% else %}—{% endif %}</td>
             <td>{{ s.remarks|default:"—" }}</td>
+            <td>
+                {% if s.status == 'pending' %}
+                <form method="post"
+                      action="{% url 'verification_cancel' s.verification_id %}"
+                      class="inline"
+                      data-confirm-title="Withdraw submission"
+                      data-confirm="Withdraw this pending verification document so you can upload a replacement?">
+                    {% csrf_token %}
+                    <button type="submit" class="btn danger small">Withdraw</button>
+                </form>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
+        </tbody>
     </table>
+    </div>
     {% else %}<div class="empty">Nothing submitted yet.</div>{% endif %}
 </div>
 {% endblock %}

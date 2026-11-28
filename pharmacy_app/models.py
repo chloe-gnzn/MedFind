@@ -26,6 +26,7 @@ class Pharmacy(PasswordMixin, models.Model):
     password_hash = models.CharField(max_length=255)                  # varchar
     contact_number = models.CharField(max_length=20)                  # varchar
     address = models.CharField(max_length=255)                        # varchar
+    photo = models.FileField(upload_to='pharmacy_photos/', blank=True)
     verification_status = models.CharField(                           # enum
         max_length=20,
         choices=VERIFICATION_CHOICES,

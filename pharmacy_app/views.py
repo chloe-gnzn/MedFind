@@ -1,12 +1,17 @@
 import uuid
+from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.core.files.storage import default_storage
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.dateparse import parse_time
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from admin_app.models import ActivityLog
+from home_app.models import MedicineCategory
 from login_app.forms import AccountPasswordChangeForm
 from login_app.utils import log_activity
 from medfind_project.session_auth import ROLE_HOME, SESSION_ROLE, get_account, role_required
@@ -14,6 +19,16 @@ from register_app.forms import PharmacyRegisterForm
 
 from .forms import InventoryForm, PharmacyProfileForm, VerificationUploadForm
 from .models import Inventory, OperatingHours, PharmacyVerification
+from .utils import format_hours_span, is_24_hours, open_now_map
+
+INVENTORY_SORTS = {
+    'name': 'medicine__medicine_name',
+    'price_asc': 'price',
+    'price_desc': '-price',
+    'stock_asc': 'stock_quantity',
+    'stock_desc': '-stock_quantity',
+    'updated': '-updated_at',
+}
 
 
 def pharmacy_register_view(request):
@@ -45,25 +60,79 @@ def pharmacy_register_view(request):
 @role_required('pharmacy')
 def dashboard_view(request):
     pharmacy = request.account
-    items = Inventory.objects.filter(pharmacy=pharmacy)
+    items = Inventory.objects.filter(pharmacy=pharmacy).select_related('medicine')
+    low_items = items.filter(
+        availability_status__in=[Inventory.STATUS_LOW, Inventory.STATUS_OUT]
+    ).order_by('stock_quantity', 'medicine__medicine_name')
+
+    today_row = OperatingHours.objects.filter(
+        pharmacy=pharmacy,
+        days_of_week=timezone.localtime().weekday(),
+    ).first()
+    hours_text = (
+        format_hours_span(today_row.opening_time, today_row.closing_time)
+        if today_row and not today_row.is_closed
+        else ''
+    )
+
     context = {
         'pharmacy': pharmacy,
         'item_count': items.count(),
-        'low_count': items.filter(availability_status__in=['low_stock', 'out_of_stock']).count(),
+        'low_count': low_items.count(),
+        'low_items': low_items[:5],
         'hours_set': OperatingHours.objects.filter(pharmacy=pharmacy).count(),
+        'open_now': open_now_map([pharmacy.pk])[pharmacy.pk],
+        'hours_text': hours_text,
+        'favorite_count': pharmacy.favorites.count(),
         'latest_verification': pharmacy.verifications.first(),
+        'recent_logs': ActivityLog.objects.filter(
+            actor_type=ActivityLog.ACTOR_PHARMACY,
+            actor_id=pharmacy.pk,
+        )[:5],
     }
     return render(request, 'pharmacy_template/dashboard.html', context)
 
 
-#Inventory
+# Inventory
 
 @role_required('pharmacy')
 def inventory_list_view(request):
-    items = (Inventory.objects.filter(pharmacy=request.account)
-             .select_related('medicine', 'medicine__category')
-             .order_by('medicine__medicine_name'))
-    return render(request, 'pharmacy_template/inventory.html', {'items': items})
+    q = request.GET.get('q', '').strip()
+    category_id = request.GET.get('category', '').strip()
+    status = request.GET.get('status', '').strip()
+    sort = request.GET.get('sort', 'name').strip()
+    if sort not in INVENTORY_SORTS:
+        sort = 'name'
+
+    items = (
+        Inventory.objects.filter(pharmacy=request.account)
+        .select_related('medicine', 'medicine__category')
+    )
+    if q:
+        items = items.filter(
+            Q(medicine__medicine_name__icontains=q) | Q(medicine__generic_name__icontains=q)
+        )
+    if category_id.isdigit():
+        items = items.filter(medicine__category_id=int(category_id))
+    if status == 'low_or_out':
+        items = items.filter(availability_status__in=[Inventory.STATUS_LOW, Inventory.STATUS_OUT])
+    elif status in (Inventory.STATUS_AVAILABLE, Inventory.STATUS_LOW, Inventory.STATUS_OUT):
+        items = items.filter(availability_status=status)
+
+    items = items.order_by(INVENTORY_SORTS[sort], 'medicine__medicine_name')
+    categories = MedicineCategory.objects.filter(
+        medicines__inventory_items__pharmacy=request.account
+    ).distinct().order_by('category_name')
+
+    return render(request, 'pharmacy_template/inventory.html', {
+        'items': items,
+        'q': q,
+        'category_id': category_id,
+        'status': status,
+        'sort': sort,
+        'categories': categories,
+        'availability_choices': Inventory.AVAILABILITY_CHOICES,
+    })
 
 
 @role_required('pharmacy')
@@ -101,6 +170,46 @@ def inventory_edit_view(request, inventory_id):
 
 @role_required('pharmacy')
 @require_POST
+def inventory_quick_update_view(request, inventory_id):
+    item = get_object_or_404(Inventory, pk=inventory_id, pharmacy=request.account)
+    try:
+        price = Decimal((request.POST.get('price') or '').strip())
+        stock_quantity = int((request.POST.get('stock_quantity') or '').strip())
+    except (InvalidOperation, ValueError):
+        messages.error(request, 'Please enter a valid price and whole-number stock quantity.')
+        return redirect('pharmacy_inventory')
+
+    if price < 0 or stock_quantity < 0:
+        messages.error(request, 'Price and stock quantity cannot be negative.')
+        return redirect('pharmacy_inventory')
+
+    requested_status = request.POST.get('availability_status', item.availability_status)
+    if stock_quantity == 0:
+        availability_status = Inventory.STATUS_OUT
+    elif requested_status == Inventory.STATUS_LOW:
+        availability_status = Inventory.STATUS_LOW
+    else:
+        availability_status = Inventory.STATUS_AVAILABLE
+
+    item.price = price
+    item.stock_quantity = stock_quantity
+    item.availability_status = availability_status
+    item.save()
+
+    log_activity(
+        'pharmacy', request.account.pk, 'inventory_update',
+        f'Quick-updated {item.medicine.medicine_name} (₱{item.price:.2f}, stock: {item.stock_quantity}).',
+    )
+    messages.success(request, f'Updated {item.medicine.medicine_name}.')
+
+    next_url = request.POST.get('next', '')
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return redirect(next_url)
+    return redirect('pharmacy_inventory')
+
+
+@role_required('pharmacy')
+@require_POST
 def inventory_delete_view(request, inventory_id):
     item = get_object_or_404(Inventory, pk=inventory_id, pharmacy=request.account)
     name = item.medicine.medicine_name
@@ -110,7 +219,7 @@ def inventory_delete_view(request, inventory_id):
     return redirect('pharmacy_inventory')
 
 
-#Operating hours
+# Operating hours
 
 def _hours_rows(pharmacy):
     existing = {h.days_of_week: h for h in OperatingHours.objects.filter(pharmacy=pharmacy)}
@@ -140,8 +249,11 @@ def hours_view(request):
                 closing = parse_time(request.POST.get(f'close_{day}', '') or '')
             except ValueError:
                 opening = closing = None
-            if not is_closed and (opening is None or closing is None or opening >= closing):
-                ok = False
+            if not is_closed:
+                if opening is None or closing is None:
+                    ok = False
+                elif opening == closing and not is_24_hours(opening, closing):
+                    ok = False
             rows.append({'day': day, 'label': label, 'opening': opening,
                          'closing': closing, 'is_closed': is_closed})
 
@@ -161,7 +273,7 @@ def hours_view(request):
             return redirect('pharmacy_hours')
         messages.error(
             request,
-            'Every open day needs an opening time that is earlier than its closing time.'
+            'Each open day needs valid opening and closing times (use 00:00–23:59 or 00:00–00:00 for 24 hours).'
         )
     else:
         rows = _hours_rows(pharmacy)
@@ -169,7 +281,7 @@ def hours_view(request):
     return render(request, 'pharmacy_template/hours.html', {'rows': rows})
 
 
-#Verification
+# Verification
 
 @role_required('pharmacy')
 def verification_view(request):
@@ -209,13 +321,42 @@ def verification_view(request):
     })
 
 
+@role_required('pharmacy')
+@require_POST
+def verification_cancel_view(request, verification_id):
+    pharmacy = request.account
+    submission = get_object_or_404(
+        PharmacyVerification,
+        pk=verification_id,
+        pharmacy=pharmacy,
+        status=PharmacyVerification.STATUS_PENDING,
+    )
+    doc_path = submission.document_path
+    submission.delete()
+    if doc_path and default_storage.exists(doc_path):
+        default_storage.delete(doc_path)
+
+    previous = pharmacy.verifications.first()
+    if previous and previous.status == PharmacyVerification.STATUS_REJECTED:
+        pharmacy.verification_status = pharmacy.VERIFICATION_REJECTED
+    elif previous and previous.status == PharmacyVerification.STATUS_APPROVED:
+        pharmacy.verification_status = pharmacy.VERIFICATION_APPROVED
+    else:
+        pharmacy.verification_status = pharmacy.VERIFICATION_PENDING
+    pharmacy.save(update_fields=['verification_status', 'updated_at'])
+
+    log_activity('pharmacy', pharmacy.pk, 'verification_cancel', 'Withdrew pending verification submission.')
+    messages.info(request, 'Pending verification submission withdrawn. You can upload a new file.')
+    return redirect('pharmacy_verification')
+
+
 # Profile & Activity
 
 ACTIVITY_GROUPS = {
     'inventory': ('inventory_add', 'inventory_update', 'inventory_remove'),
     'hours': ('hours_update',),
-    'verification': ('verification_submit',),
-    'account': ('register', 'login', 'logout', 'profile_update', 'password_change', 'password_reset'),
+    'verification': ('verification_submit', 'verification_cancel'),
+    'account': ('register', 'login', 'logout', 'profile_update', 'password_change', 'password_reset', 'photo_remove'),
 }
 
 
@@ -228,13 +369,26 @@ def profile_view(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'update_profile':
-            profile_form = PharmacyProfileForm(request.POST, instance=pharmacy)
+            old_photo_name = pharmacy.photo.name if pharmacy.photo else ''
+            profile_form = PharmacyProfileForm(request.POST, request.FILES, instance=pharmacy)
             if profile_form.is_valid():
                 updated = profile_form.save()
+                if old_photo_name and updated.photo.name != old_photo_name and default_storage.exists(old_photo_name):
+                    default_storage.delete(old_photo_name)
                 log_activity('pharmacy', updated.pk, 'profile_update',
                              f'Updated pharmacy profile for {updated.business_name}.')
                 messages.success(request, 'Pharmacy profile updated.')
                 return redirect('pharmacy_profile')
+        elif action == 'remove_photo':
+            if pharmacy.photo:
+                old_photo_name = pharmacy.photo.name
+                pharmacy.photo = ''
+                pharmacy.save(update_fields=['photo', 'updated_at'])
+                if old_photo_name and default_storage.exists(old_photo_name):
+                    default_storage.delete(old_photo_name)
+                log_activity('pharmacy', pharmacy.pk, 'photo_remove', 'Removed pharmacy storefront photo.')
+                messages.info(request, 'Storefront photo removed.')
+            return redirect('pharmacy_profile')
         elif action == 'change_password':
             password_form = AccountPasswordChangeForm(request.POST, account=pharmacy)
             if password_form.is_valid():

@@ -28,6 +28,11 @@
 {% block content %}
 <div class="up-pharmacy-grid">
     <section class="sr-card">
+        {% if pharmacy.photo %}
+        <div class="up-ph-banner">
+            <img src="{{ pharmacy.photo.url }}" alt="{{ pharmacy.business_name }}">
+        </div>
+        {% endif %}
         <h2 class="sr-card-title" style="font-size:22px">Opening hours</h2>
         <table class="data hours-table">
             {% for row in hour_rows %}

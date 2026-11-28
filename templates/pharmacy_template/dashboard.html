@@ -1,9 +1,30 @@
 {% extends 'pharmacy_base.html' %}
 {% block title %}Pharmacy dashboard{% endblock %}
+
 {% block page_header %}
-<h1 class="home-welcome">Welcome, <span class="name">{{ pharmacy.business_name }}!</span></h1>
-<p class="pp-sub">{{ pharmacy.address }} · {{ pharmacy.contact_number }}</p>
+<div class="pp-dash-brand">
+    {% if pharmacy.photo %}
+    <div class="pp-dash-thumb">
+        <img src="{{ pharmacy.photo.url }}" alt="{{ pharmacy.business_name }}">
+    </div>
+    {% endif %}
+    <div>
+        <h1 class="home-welcome">Welcome, <span class="name">{{ pharmacy.business_name }}!</span></h1>
+        <p class="pp-sub">{{ pharmacy.address }} · {{ pharmacy.contact_number }}</p>
+    </div>
+</div>
 {% endblock %}
+
+{% block page_actions %}
+{% if open_now is None %}
+    <span class="badge">Hours not set</span>
+{% elif open_now %}
+    <span class="badge pp-badge-open">Open now{% if hours_text %} · {{ hours_text }}{% endif %}</span>
+{% else %}
+    <span class="badge pp-badge-closed">Closed right now</span>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 
 {% if pharmacy.verification_status == 'approved' %}
@@ -18,9 +39,22 @@
 {% endif %}
 
 <div class="grid">
-    <a class="stat" href="{% url 'pharmacy_inventory' %}"><div class="num">{{ item_count }}</div><div class="lbl">Medicines in inventory</div></a>
-    <a class="stat" href="{% url 'pharmacy_inventory' %}"><div class="num">{{ low_count }}</div><div class="lbl">Low / out of stock</div></a>
-    <a class="stat" href="{% url 'pharmacy_hours' %}"><div class="num">{{ hours_set }}/7</div><div class="lbl">Days with hours set</div></a>
+    <a class="stat" href="{% url 'pharmacy_inventory' %}">
+        <div class="num">{{ item_count }}</div>
+        <div class="lbl">Medicines in inventory</div>
+    </a>
+    <a class="stat" href="{% url 'pharmacy_inventory' %}?status=low_or_out">
+        <div class="num">{{ low_count }}</div>
+        <div class="lbl">Low / out of stock</div>
+    </a>
+    <a class="stat" href="{% url 'pharmacy_hours' %}">
+        <div class="num">{{ hours_set }}/7</div>
+        <div class="lbl">Days with hours set</div>
+    </a>
+    <a class="stat" href="{% url 'pharmacy_profile' %}">
+        <div class="num">{{ favorite_count }}</div>
+        <div class="lbl">Customer favorites</div>
+    </a>
 </div>
 
 <div class="panel">
@@ -29,6 +63,65 @@
         <a class="btn" href="{% url 'inventory_add' %}">+ Add medicine to inventory</a>
         <a class="btn secondary" href="{% url 'pharmacy_hours' %}">Set operating hours</a>
         <a class="btn secondary" href="{% url 'pharmacy_verification' %}">Verification</a>
+        <a class="btn secondary" href="{% url 'pharmacy_profile' %}">{% if pharmacy.photo %}Pharmacy Profile{% else %}Add Storefront Photo{% endif %}</a>
     </div>
+</div>
+
+<div class="pp-two-col">
+    <section class="panel">
+        <div class="pp-row-between">
+            <h2>Stock alerts</h2>
+            <a class="pp-link" href="{% url 'pharmacy_inventory' %}?status=low_or_out">View all →</a>
+        </div>
+        {% if low_items %}
+        <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr><th>Medicine</th><th>Stock</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+            {% for i in low_items %}
+                <tr>
+                    <td><strong>{{ i.medicine.medicine_name }}</strong>
+                        <div class="muted">{{ i.medicine.strength }} {{ i.medicine.form }}</div></td>
+                    <td>{{ i.stock_quantity }}</td>
+                    <td><span class="badge {{ i.availability_status }}">{{ i.get_availability_status_display }}</span></td>
+                    <td><a class="btn secondary small" href="{% url 'inventory_edit' i.inventory_id %}">Edit</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <div class="empty">All medicines in your inventory are well stocked.</div>
+        {% endif %}
+    </section>
+
+    <section class="panel">
+        <div class="pp-row-between">
+            <h2>Recent activity</h2>
+            <a class="pp-link" href="{% url 'pharmacy_activity' %}">View all →</a>
+        </div>
+        {% if recent_logs %}
+        <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr><th>When</th><th>Action</th><th>Details</th></tr>
+            </thead>
+            <tbody>
+            {% for l in recent_logs %}
+                <tr>
+                    <td class="muted">{{ l.created_at|date:"M d, g:i A" }}</td>
+                    <td><span class="badge">{{ l.action }}</span></td>
+                    <td>{{ l.description }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <div class="empty">No recent activity yet.</div>
+        {% endif %}
+    </section>
 </div>
 {% endblock %}

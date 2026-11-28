@@ -1,37 +1,115 @@
 {% extends 'pharmacy_base.html' %}
 {% block title %}Inventory{% endblock %}
+
 {% block page_header %}
 <h1 class="pp-title">Inventory</h1>
-<p class="pp-sub">Medicines your pharmacy carries.</p>
+<p class="pp-sub">Search, filter, and quickly update prices or stock for medicines your pharmacy carries.</p>
 {% endblock %}
-{% block page_actions %}<a class="btn" href="{% url 'inventory_add' %}">+ Add medicine</a>{% endblock %}
+
+{% block page_actions %}
+<a class="btn" href="{% url 'inventory_add' %}">+ Add medicine</a>
+{% endblock %}
+
 {% block content %}
 <div class="panel">
+    <form class="pp-filter-bar" method="get" action="{% url 'pharmacy_inventory' %}">
+        <input class="form-input" type="text" name="q" value="{{ q }}"
+               placeholder="Search brand or generic name..." aria-label="Search inventory">
+
+        {% if categories %}
+        <select class="form-input" name="category" aria-label="Filter by category" onchange="this.form.submit()">
+            <option value="">All categories</option>
+            {% for c in categories %}
+            <option value="{{ c.category_id }}" {% if category_id == c.category_id|stringformat:'s' %}selected{% endif %}>{{ c.category_name }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
+
+        <select class="form-input" name="status" aria-label="Filter by status" onchange="this.form.submit()">
+            <option value="">All statuses</option>
+            <option value="low_or_out" {% if status == 'low_or_out' %}selected{% endif %}>Low or out of stock</option>
+            <option value="available" {% if status == 'available' %}selected{% endif %}>Available</option>
+            <option value="low_stock" {% if status == 'low_stock' %}selected{% endif %}>Low stock</option>
+            <option value="out_of_stock" {% if status == 'out_of_stock' %}selected{% endif %}>Out of stock</option>
+        </select>
+
+        <select class="form-input" name="sort" aria-label="Sort inventory" onchange="this.form.submit()">
+            <option value="name" {% if sort == 'name' %}selected{% endif %}>Sort: Name (A–Z)</option>
+            <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Sort: Lowest Price</option>
+            <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Sort: Highest Price</option>
+            <option value="stock_asc" {% if sort == 'stock_asc' %}selected{% endif %}>Sort: Lowest Stock</option>
+            <option value="stock_desc" {% if sort == 'stock_desc' %}selected{% endif %}>Sort: Highest Stock</option>
+            <option value="updated" {% if sort == 'updated' %}selected{% endif %}>Sort: Recently Updated</option>
+        </select>
+
+        <button type="submit" class="btn small">Filter</button>
+        {% if q or category_id or status or sort != 'name' %}
+        <a class="btn secondary small" href="{% url 'pharmacy_inventory' %}">Reset</a>
+        {% endif %}
+    </form>
+
     {% if items %}
     <div class="table-wrap">
     <table class="data">
-        <tr><th>Medicine</th><th>Price</th><th>Stock</th><th>Status</th><th>Updated</th><th></th></tr>
+        <thead>
+            <tr>
+                <th>Medicine</th>
+                <th>Quick update (Price · Stock · Status)</th>
+                <th>Updated</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
         {% for i in items %}
         <tr>
-            <td><strong>{{ i.medicine.medicine_name }}</strong>
-                <div class="muted">{{ i.medicine.generic_name }} · {{ i.medicine.strength }} {{ i.medicine.form }}</div></td>
-            <td>₱{{ i.price|floatformat:2 }}</td>
-            <td>{{ i.stock_quantity }}</td>
-            <td><span class="badge {{ i.availability_status }}">{{ i.get_availability_status_display }}</span></td>
-            <td class="muted">{{ i.updated_at|date:"M d, g:i A" }}</td>
-            <td><div class="actions">
-                <a class="btn secondary small" href="{% url 'inventory_edit' i.inventory_id %}">Edit</a>
-                <form method="post" action="{% url 'inventory_delete' i.inventory_id %}" class="inline"
-                      onsubmit="return confirm('Remove this medicine from your inventory?');">
-                    {% csrf_token %}<button class="btn danger small">Remove</button>
+            <td>
+                <strong>{{ i.medicine.medicine_name }}</strong>
+                <div class="muted">{{ i.medicine.generic_name }} · {{ i.medicine.strength }} {{ i.medicine.form }} · {{ i.medicine.category.category_name }}</div>
+                <div style="margin-top:6px"><span class="badge {{ i.availability_status }}">{{ i.get_availability_status_display }}</span></div>
+            </td>
+            <td>
+                <form class="pp-inline-edit" method="post" action="{% url 'inventory_quick_update' i.inventory_id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <input class="pp-mini-input" type="number" name="price" step="0.01" min="0"
+                           value="{{ i.price|floatformat:2 }}" aria-label="Price for {{ i.medicine.medicine_name }}">
+                    <input class="pp-mini-input stock" type="number" name="stock_quantity" min="0"
+                           value="{{ i.stock_quantity }}" aria-label="Stock for {{ i.medicine.medicine_name }}">
+                    <select class="pp-mini-select" name="availability_status" aria-label="Status for {{ i.medicine.medicine_name }}">
+                        {% for val, label in availability_choices %}
+                        <option value="{{ val }}" {% if i.availability_status == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn small">Save</button>
                 </form>
-            </div></td>
+            </td>
+            <td class="muted">{{ i.updated_at|date:"M d, g:i A" }}</td>
+            <td>
+                <div class="actions">
+                    <a class="btn secondary small" href="{% url 'inventory_edit' i.inventory_id %}">Edit</a>
+                    <form method="post"
+                          action="{% url 'inventory_delete' i.inventory_id %}"
+                          class="inline"
+                          data-confirm-title="Remove medicine"
+                          data-confirm="Remove {{ i.medicine.medicine_name }} from your inventory?">
+                        {% csrf_token %}
+                        <button type="submit" class="btn danger small">Remove</button>
+                    </form>
+                </div>
+            </td>
         </tr>
         {% endfor %}
+        </tbody>
     </table>
     </div>
     {% else %}
-        <div class="empty">Your inventory is empty. Add the medicines you sell so customers can find you.</div>
+        <div class="empty">
+            {% if q or category_id or status %}
+                No inventory items match the current filters.
+            {% else %}
+                Your inventory is empty. Add the medicines you sell so customers can find you.
+            {% endif %}
+        </div>
     {% endif %}
 </div>
 {% endblock %}

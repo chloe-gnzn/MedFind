@@ -42,6 +42,14 @@
         </details>
     </header>
 
+    <div class="up-toast-stack" id="pp-toast-stack" aria-live="polite" aria-atomic="true">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="up-toast {{ message.tags }}" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
     <div class="home-shell">
 
         {# ===== Page title (left) + optional action button (right) ===== #}
@@ -53,12 +61,6 @@
         {# Rectangle 1: raised outer shell  /  Rectangle 2: recessed inner panel #}
         <main class="home-panel">
           <div class="home-panel-inner">
-            {% if messages %}
-            <ul class="home-messages" role="status">
-                {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
-            </ul>
-            {% endif %}
-
             {# Only this area scrolls #}
             <div class="home-scroll pp-scroll">
                 {% block content %}{% endblock %}
@@ -67,5 +69,69 @@
         </main>
 
     </div>
+
+    <div class="pp-modal" id="pp-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="pp-modal-title">
+        <div class="pp-modal-card">
+            <div class="pp-modal-inner">
+                <h2 class="pp-modal-title" id="pp-modal-title">Confirm action</h2>
+                <p class="pp-modal-text" id="pp-modal-text"></p>
+                <div class="actions">
+                    <button type="button" class="btn danger" id="pp-modal-confirm">Confirm</button>
+                    <button type="button" class="btn secondary" id="pp-modal-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const stack = document.getElementById('pp-toast-stack');
+        if (stack) {
+            stack.querySelectorAll('.up-toast').forEach(function (toast) {
+                setTimeout(function () {
+                    toast.classList.add('is-leaving');
+                    setTimeout(function () { toast.remove(); }, 260);
+                }, 3000);
+            });
+        }
+
+        const modal = document.getElementById('pp-confirm-modal');
+        const modalTitle = document.getElementById('pp-modal-title');
+        const modalText = document.getElementById('pp-modal-text');
+        const confirmBtn = document.getElementById('pp-modal-confirm');
+        const cancelBtn = document.getElementById('pp-modal-cancel');
+        let pendingForm = null;
+
+        document.addEventListener('submit', function (event) {
+            const form = event.target.closest('form[data-confirm]');
+            if (!form || form.dataset.confirmed === 'true') return;
+            event.preventDefault();
+            pendingForm = form;
+            modalTitle.textContent = form.dataset.confirmTitle || 'Confirm action';
+            modalText.textContent = form.dataset.confirm;
+            modal.classList.add('is-open');
+            confirmBtn.focus();
+        });
+
+        function closeModal() {
+            modal.classList.remove('is-open');
+            pendingForm = null;
+        }
+
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+        if (modal) {
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) closeModal();
+            });
+        }
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function () {
+                if (!pendingForm) return;
+                pendingForm.dataset.confirmed = 'true';
+                pendingForm.submit();
+            });
+        }
+    })();
+    </script>
 </body>
 </html>

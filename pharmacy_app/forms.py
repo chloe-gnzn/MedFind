@@ -6,6 +6,7 @@ from home_app.models import Medicine
 from .models import Inventory, Pharmacy
 
 ALLOWED_EXTENSIONS = ('.pdf', '.jpg', '.jpeg', '.png')
+ALLOWED_IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp')
 MAX_UPLOAD_MB = 5
 
 
@@ -30,7 +31,25 @@ class InventoryForm(forms.ModelForm):
             self.fields['medicine'].queryset = (
                 Medicine.objects.exclude(inventory_items__pharmacy=pharmacy)
                 .select_related('category')
+                .order_by('category__category_name', 'medicine_name')
             )
+
+    def clean(self):
+        cleaned = super().clean()
+        stock = cleaned.get('stock_quantity')
+        status = cleaned.get('availability_status')
+        if stock is not None and status:
+            if stock == 0 and status != Inventory.STATUS_OUT:
+                self.add_error(
+                    'availability_status',
+                    'Stock quantity is 0, so availability must be Out of stock.',
+                )
+            elif stock > 0 and status == Inventory.STATUS_OUT:
+                self.add_error(
+                    'availability_status',
+                    'Out of stock items must have a stock quantity of 0.',
+                )
+        return cleaned
 
 
 class VerificationUploadForm(forms.Form):
@@ -49,22 +68,24 @@ class VerificationUploadForm(forms.Form):
 
 
 class PharmacyProfileForm(forms.ModelForm):
-    """Edit the logged-in pharmacy's ERD profile fields."""
+    """Edit the logged-in pharmacy's ERD profile fields and storefront photo."""
 
     class Meta:
         model = Pharmacy
-        fields = ['business_name', 'email', 'contact_number', 'address']
+        fields = ['business_name', 'email', 'contact_number', 'address', 'photo']
         labels = {
             'business_name': 'Pharmacy Name',
             'email': 'Email Address',
             'contact_number': 'Contact Number',
             'address': 'Address',
+            'photo': 'Storefront / Profile Picture (JPG, PNG, WebP, max 5 MB)',
         }
         widgets = {
             'business_name': forms.TextInput(attrs={'placeholder': 'Pharmacy / drugstore name'}),
             'email': forms.EmailInput(attrs={'placeholder': 'email@example.com', 'autocomplete': 'email'}),
             'contact_number': forms.TextInput(attrs={'placeholder': '+63 XXX XXX XXXX', 'autocomplete': 'tel'}),
             'address': forms.TextInput(attrs={'placeholder': 'Street, barangay, city'}),
+            'photo': forms.FileInput(attrs={'accept': 'image/png,image/jpeg,image/webp'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -77,3 +98,13 @@ class PharmacyProfileForm(forms.ModelForm):
         if Pharmacy.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
             raise ValidationError('Another pharmacy account is already using this email address.')
         return email
+
+    def clean_photo(self):
+        photo = self.cleaned_data.get('photo')
+        # Only validate newly uploaded files, not an already-saved FieldFile
+        if photo and hasattr(photo, 'content_type'):
+            if not photo.name.lower().endswith(ALLOWED_IMAGE_EXTENSIONS):
+                raise ValidationError('Please upload a JPG, PNG, or WebP image.')
+            if photo.size > MAX_UPLOAD_MB * 1024 * 1024:
+                raise ValidationError(f'Image is too large (max {MAX_UPLOAD_MB} MB).')
+        return photo

@@ -9,20 +9,13 @@ from django.views.decorators.http import require_POST
 from login_app.utils import log_activity
 from medfind_project.session_auth import role_required
 from pharmacy_app.models import Inventory, OperatingHours, Pharmacy
-from pharmacy_app.utils import open_now_map
+from pharmacy_app.utils import format_hours_span, open_now_map
 
 from .forms import UserPasswordChangeForm, UserProfileForm
 from .models import Favorite, Medicine, MedicineCategory, SearchHistory
 
 VISIBLE_PHARMACY = {'pharmacy__verification_status': 'approved', 'pharmacy__is_active': True}
 IN_STOCK_STATUSES = ['available', 'low_stock']
-
-
-def _short_time(t):
-    """time(8, 0) -> '8AM', time(20, 30) -> '8:30PM' (matches the Figma card)."""
-    hour = t.hour % 12 or 12
-    suffix = 'AM' if t.hour < 12 else 'PM'
-    return f'{hour}{suffix}' if t.minute == 0 else f'{hour}:{t.minute:02d}{suffix}'
 
 
 def _attach_pharmacy_hours(pharmacies):
@@ -42,7 +35,7 @@ def _attach_pharmacy_hours(pharmacies):
         p.open_now = open_map[p.pk]
         h = today.get(p.pk)
         if h and not h.is_closed and h.opening_time and h.closing_time:
-            p.hours_text = f'{_short_time(h.opening_time)} - {_short_time(h.closing_time)}'
+            p.hours_text = format_hours_span(h.opening_time, h.closing_time)
         else:
             p.hours_text = ''
     return pharmacies

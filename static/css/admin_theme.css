@@ -1,6 +1,3 @@
-/* MedFind | extras shared by admin + user pages (loaded by admin_base.html and user_base.html). Loaded AFTER home.css + pharmacy_theme.css by admin_base.html.
-   Only things the pharmacy theme doesn't already cover (chips, filters, pager, SQL box...). */
-
 /* 9 nav links: tighter so they fit beside the logo + profile button */
 .pharmacy-page .home-nav { gap: 24px; }
 .pharmacy-page .admin-nav-links { gap: 18px; flex-wrap: wrap; }

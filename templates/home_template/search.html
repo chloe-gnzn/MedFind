@@ -167,15 +167,22 @@
     <div class="sr-list" id="sr-ph-list">
     {% for p in pharmacies %}
         <article class="sr-row">
-            <div class="sr-row-main">
-                <a class="sr-row-title" href="{% url 'pharmacy_detail' p.pharmacy_id %}">{{ p.business_name }}</a>
-                <p class="sr-row-meta sr-with-icon">
-                    <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
-                    <span>
-                        {{ p.address }}{% if p.contact_number %}<span class="sr-dot">·</span>{{ p.contact_number }}{% endif %}
-                        {% if p.hours_text %}<span class="sr-dot">·</span>{{ p.hours_text }}{% endif %}
-                    </span>
-                </p>
+            <div class="sr-row-main up-ph-row-main">
+                {% if p.photo %}
+                <div class="up-ph-thumb">
+                    <img src="{{ p.photo.url }}" alt="{{ p.business_name }}">
+                </div>
+                {% endif %}
+                <div>
+                    <a class="sr-row-title" href="{% url 'pharmacy_detail' p.pharmacy_id %}">{{ p.business_name }}</a>
+                    <p class="sr-row-meta sr-with-icon">
+                        <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
+                        <span>
+                            {{ p.address }}{% if p.contact_number %}<span class="sr-dot">·</span>{{ p.contact_number }}{% endif %}
+                            {% if p.hours_text %}<span class="sr-dot">·</span>{{ p.hours_text }}{% endif %}
+                        </span>
+                    </p>
+                </div>
             </div>
             <div class="sr-row-side">
                 {% if p.open_now is None %}

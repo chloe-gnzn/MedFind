@@ -1,10 +1,17 @@
-from django.test import TestCase
+import tempfile
+from datetime import time
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from admin_app.models import ActivityLog
-from home_app.models import Favorite, User
+from home_app.models import Favorite, Medicine, MedicineCategory, User
 
-from .models import Pharmacy
+from .forms import InventoryForm
+from .models import Inventory, OperatingHours, Pharmacy, PharmacyVerification
+from .utils import open_now_map
 
 
 class PharmacyMissingScreensTests(TestCase):
@@ -132,3 +139,219 @@ class PharmacyMissingScreensTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, 'Added Biogesic.')
         self.assertNotContains(res, 'Other pharmacy secret log.')
+
+    def test_dashboard_shows_open_status_favorites_alerts_and_recent_activity(self):
+        today = timezone.localtime().weekday()
+        OperatingHours.objects.create(
+            pharmacy=self.pharmacy,
+            days_of_week=today,
+            opening_time=time(0, 0),
+            closing_time=time(23, 59),
+            is_closed=False,
+        )
+        cat = MedicineCategory.objects.create(category_name='Pain Relief')
+        med = Medicine.objects.create(
+            category=cat,
+            medicine_name='Biogesic',
+            generic_name='Paracetamol',
+            form='Tablet',
+            strength='500mg',
+        )
+        Inventory.objects.create(
+            pharmacy=self.pharmacy,
+            medicine=med,
+            price='5.00',
+            availability_status='low_stock',
+            stock_quantity=4,
+        )
+        self.client.post(reverse('pharmacy_login'), {
+            'email': 'care@pharmacy.com',
+            'password': 'PharmPass123!',
+        })
+
+        res = self.client.get(reverse('pharmacy_dashboard'))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'Open now')
+        self.assertContains(res, '24 hours')
+        self.assertContains(res, 'Biogesic')
+        self.assertContains(res, 'Stock alerts')
+        self.assertContains(res, 'Recent activity')
+
+    def test_inventory_filters_sort_quick_update_and_form_validation(self):
+        cat1 = MedicineCategory.objects.create(category_name='Antibiotics')
+        cat2 = MedicineCategory.objects.create(category_name='Vitamins')
+        m1 = Medicine.objects.create(
+            category=cat1, medicine_name='Amoxicillin', generic_name='Amoxicillin', form='Capsule', strength='500mg'
+        )
+        m2 = Medicine.objects.create(
+            category=cat2, medicine_name='Ascorbic', generic_name='Vitamin C', form='Tablet', strength='500mg'
+        )
+        inv1 = Inventory.objects.create(
+            pharmacy=self.pharmacy, medicine=m1, price='12.00', availability_status='low_stock', stock_quantity=5
+        )
+        Inventory.objects.create(
+            pharmacy=self.pharmacy, medicine=m2, price='8.00', availability_status='available', stock_quantity=50
+        )
+
+        # Form validation checks stock_quantity vs availability_status
+        bad_zero = InventoryForm(
+            data={'medicine': m1.pk, 'price': '10.00', 'stock_quantity': 0, 'availability_status': 'available'}
+        )
+        self.assertFalse(bad_zero.is_valid())
+        self.assertIn('availability_status', bad_zero.errors)
+
+        bad_out = InventoryForm(
+            data={'medicine': m1.pk, 'price': '10.00', 'stock_quantity': 10, 'availability_status': 'out_of_stock'}
+        )
+        self.assertFalse(bad_out.is_valid())
+        self.assertIn('availability_status', bad_out.errors)
+
+        self.client.post(reverse('pharmacy_login'), {
+            'email': 'care@pharmacy.com',
+            'password': 'PharmPass123!',
+        })
+        res_filter = self.client.get(reverse('pharmacy_inventory'), {
+            'q': 'Amox',
+            'category': str(cat1.pk),
+            'status': 'low_or_out',
+            'sort': 'price_asc',
+        })
+        self.assertEqual(res_filter.status_code, 200)
+        self.assertContains(res_filter, 'Amoxicillin')
+        self.assertNotContains(res_filter, 'Ascorbic')
+
+        # Quick update to 0 stock auto-sets out_of_stock
+        res_quick = self.client.post(reverse('inventory_quick_update', args=[inv1.pk]), {
+            'price': '13.50',
+            'stock_quantity': '0',
+            'availability_status': 'available',
+        })
+        self.assertRedirects(res_quick, reverse('pharmacy_inventory'))
+        inv1.refresh_from_db()
+        self.assertEqual(str(inv1.price), '13.50')
+        self.assertEqual(inv1.stock_quantity, 0)
+        self.assertEqual(inv1.availability_status, Inventory.STATUS_OUT)
+
+    def test_operating_hours_supports_24h_and_overnight_schedules(self):
+        self.client.post(reverse('pharmacy_login'), {
+            'email': 'care@pharmacy.com',
+            'password': 'PharmPass123!',
+        })
+        payload = {}
+        for day in range(7):
+            if day == 0:
+                payload[f'open_{day}'] = '00:00'
+                payload[f'close_{day}'] = '00:00'
+            elif day == 1:
+                payload[f'open_{day}'] = '18:00'
+                payload[f'close_{day}'] = '02:00'
+            else:
+                payload[f'closed_{day}'] = 'on'
+
+        res = self.client.post(reverse('pharmacy_hours'), payload)
+        self.assertRedirects(res, reverse('pharmacy_hours'))
+        self.assertEqual(OperatingHours.objects.filter(pharmacy=self.pharmacy).count(), 7)
+
+        today = timezone.localtime().weekday()
+        OperatingHours.objects.update_or_create(
+            pharmacy=self.pharmacy,
+            days_of_week=today,
+            defaults={'opening_time': time(0, 0), 'closing_time': time(0, 0), 'is_closed': False},
+        )
+        self.assertTrue(open_now_map([self.pharmacy.pk])[self.pharmacy.pk])
+
+    def test_verification_can_withdraw_pending_submission(self):
+        self.pharmacy.verification_status = Pharmacy.VERIFICATION_PENDING
+        self.pharmacy.save(update_fields=['verification_status', 'updated_at'])
+
+        PharmacyVerification.objects.create(
+            pharmacy=self.pharmacy,
+            document_path='verification_docs/old_rejected.pdf',
+            status=PharmacyVerification.STATUS_REJECTED,
+            remarks='Blurry image',
+        )
+        pending = PharmacyVerification.objects.create(
+            pharmacy=self.pharmacy,
+            document_path='verification_docs/wrong_upload.pdf',
+            status=PharmacyVerification.STATUS_PENDING,
+        )
+
+        self.client.post(reverse('pharmacy_login'), {
+            'email': 'care@pharmacy.com',
+            'password': 'PharmPass123!',
+        })
+        res = self.client.post(reverse('verification_cancel', args=[pending.pk]))
+        self.assertRedirects(res, reverse('pharmacy_verification'))
+        self.assertFalse(PharmacyVerification.objects.filter(pk=pending.pk).exists())
+        self.pharmacy.refresh_from_db()
+        self.assertEqual(self.pharmacy.verification_status, Pharmacy.VERIFICATION_REJECTED)
+
+    def test_pharmacy_can_upload_display_and_remove_storefront_photo(self):
+        with tempfile.TemporaryDirectory() as tmp_media:
+            with override_settings(MEDIA_ROOT=tmp_media):
+                self.client.post(reverse('pharmacy_login'), {
+                    'email': 'care@pharmacy.com',
+                    'password': 'PharmPass123!',
+                })
+
+                # Reject non-image files
+                bad_file = SimpleUploadedFile('notes.txt', b'not an image', content_type='text/plain')
+                res_bad = self.client.post(reverse('pharmacy_profile'), {
+                    'action': 'update_profile',
+                    'business_name': 'CarePlus Pharmacy',
+                    'email': 'care@pharmacy.com',
+                    'contact_number': '09175551234',
+                    'address': 'Osmena Blvd, Cebu City',
+                    'photo': bad_file,
+                })
+                self.assertEqual(res_bad.status_code, 200)
+                self.assertContains(res_bad, 'Please upload a JPG, PNG, or WebP image.')
+
+                # Upload valid PNG image
+                img_file = SimpleUploadedFile('storefront.png', b'\x89PNG\r\n\x1a\nfake', content_type='image/png')
+                res_ok = self.client.post(reverse('pharmacy_profile'), {
+                    'action': 'update_profile',
+                    'business_name': 'CarePlus Pharmacy',
+                    'email': 'care@pharmacy.com',
+                    'contact_number': '09175551234',
+                    'address': 'Osmena Blvd, Cebu City',
+                    'photo': img_file,
+                })
+                self.assertRedirects(res_ok, reverse('pharmacy_profile'))
+                self.pharmacy.refresh_from_db()
+                self.assertTrue(bool(self.pharmacy.photo))
+                photo_url = self.pharmacy.photo.url
+
+                # Visible on Pharmacy Dashboard
+                dash_res = self.client.get(reverse('pharmacy_dashboard'))
+                self.assertContains(dash_res, photo_url)
+
+                # Visible on User End (Home, Search, Pharmacy Detail)
+                self.client.get(reverse('pharmacy_logout'))
+                user = User(
+                    first_name='Pat',
+                    last_name='Lim',
+                    email='pat2@example.com',
+                    phone_number='09178887777',
+                )
+                user.set_password('UserPass123!')
+                user.save()
+                self.client.post(reverse('login'), {'email': 'pat2@example.com', 'password': 'UserPass123!'})
+
+                self.assertContains(self.client.get(reverse('home')), photo_url)
+                self.assertContains(self.client.get(reverse('search')), photo_url)
+                self.assertContains(
+                    self.client.get(reverse('pharmacy_detail', args=[self.pharmacy.pk])),
+                    photo_url,
+                )
+
+                # Remove photo from Pharmacy Profile
+                self.client.get(reverse('logout'))
+                self.client.post(reverse('pharmacy_login'), {
+                    'email': 'care@pharmacy.com',
+                    'password': 'PharmPass123!',
+                })
+                res_rem = self.client.post(reverse('pharmacy_profile'), {'action': 'remove_photo'})
+                self.assertRedirects(res_rem, reverse('pharmacy_profile'))
+                self.pharmacy.refresh_from_db()
+                self.assertFalse(bool(self.pharmacy.photo))

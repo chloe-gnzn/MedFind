@@ -59,16 +59,23 @@
     <div class="sr-list">
     {% for f in pharmacy_favs %}
         <article class="sr-row">
-            <div class="sr-row-main">
-                <a class="sr-row-title" href="{% url 'pharmacy_detail' f.pharmacy.pharmacy_id %}">{{ f.pharmacy.business_name }}</a>
-                <p class="sr-row-meta sr-with-icon">
-                    <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
-                    <span>
-                        {{ f.pharmacy.address }}
-                        {% if f.pharmacy.hours_text %}<span class="sr-dot">·</span>{{ f.pharmacy.hours_text }}{% endif %}
-                        <span class="sr-dot">·</span>Saved {{ f.created_at|date:"M d, Y" }}
-                    </span>
-                </p>
+            <div class="sr-row-main up-ph-row-main">
+                {% if f.pharmacy.photo %}
+                <div class="up-ph-thumb">
+                    <img src="{{ f.pharmacy.photo.url }}" alt="{{ f.pharmacy.business_name }}">
+                </div>
+                {% endif %}
+                <div>
+                    <a class="sr-row-title" href="{% url 'pharmacy_detail' f.pharmacy.pharmacy_id %}">{{ f.pharmacy.business_name }}</a>
+                    <p class="sr-row-meta sr-with-icon">
+                        <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
+                        <span>
+                            {{ f.pharmacy.address }}
+                            {% if f.pharmacy.hours_text %}<span class="sr-dot">·</span>{{ f.pharmacy.hours_text }}{% endif %}
+                            <span class="sr-dot">·</span>Saved {{ f.created_at|date:"M d, Y" }}
+                        </span>
+                    </p>
+                </div>
             </div>
             <div class="sr-row-side">
                 {% if f.pharmacy.open_now is None %}

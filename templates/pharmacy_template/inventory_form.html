@@ -1,6 +1,11 @@
 {% extends 'pharmacy_base.html' %}
 {% block title %}{{ mode }} inventory item{% endblock %}
-{% block page_header %}<h1 class="pp-title">{{ mode }} inventory item</h1>{% endblock %}
+
+{% block page_header %}
+<h1 class="pp-title">{{ mode }} inventory item</h1>
+<p class="pp-sub">{% if mode == 'Edit' %}Update price, stock quantity, and availability status.{% else %}Pick a medicine from the catalog and set your price and stock.{% endif %}</p>
+{% endblock %}
+
 {% block content %}
 <div class="panel narrow">
     <form method="post" novalidate>
@@ -19,4 +24,21 @@
         </div>
     </form>
 </div>
+
+<script>
+(function () {
+    const stockInput = document.getElementById('id_stock_quantity');
+    const statusSelect = document.getElementById('id_availability_status');
+    if (!stockInput || !statusSelect) return;
+
+    stockInput.addEventListener('change', function () {
+        const qty = parseInt(stockInput.value, 10);
+        if (qty === 0) {
+            statusSelect.value = 'out_of_stock';
+        } else if (qty > 0 && statusSelect.value === 'out_of_stock') {
+            statusSelect.value = 'available';
+        }
+    });
+})();
+</script>
 {% endblock %}
