@@ -9,5 +9,7 @@ urlpatterns = [
     path('favorites/', views.favorites_view, name='favorites'),
     path('favorites/toggle/<str:kind>/<int:obj_id>/', views.toggle_favorite_view, name='toggle_favorite'),
     path('history/', views.history_view, name='history'),
+    path('history/<int:search_id>/delete/', views.delete_history_item_view, name='delete_history_item'),
     path('history/clear/', views.clear_history_view, name='clear_history'),
+    path('profile/', views.profile_view, name='user_profile'),
 ]

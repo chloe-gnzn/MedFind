@@ -1,114 +1,85 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MedFind | Home</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@600&family=Alexandria:wght@300;400;700&family=Lalezar&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/home.css' %}">
-</head>
-<body class="home-page">
+{% extends 'user_base.html' %}
+{% block title %}Home{% endblock %}
+{% block scroll_class %}{% endblock %}
 
-    {# ===== Top navigation bar ===== #}
-    <header class="home-nav">
-        <a class="home-logo" href="{% url 'home' %}" aria-label="MedFind+">MedFind<span class="plus">+</span></a>
+{% block top_bar %}
+<div class="home-top">
+    <h1 class="home-welcome">Welcome, <span class="name">{{ current_account.first_name }}!</span></h1>
 
-        <nav class="home-nav-links" aria-label="Main">
-            <a href="{% url 'home' %}" class="active" aria-current="page">Home</a>
-            <a href="{% url 'favorites' %}">Favorites</a>
-            <a href="{% url 'history' %}">History</a>
-        </nav>
+    <form class="home-search" method="get" action="{% url 'search' %}" role="search">
+        <input class="home-search-input" type="text" name="q"
+               placeholder="Search Pharmacy/Medicine" aria-label="Search pharmacy or medicine">
+        <button type="submit" class="home-search-btn">Search</button>
+    </form>
+</div>
+{% endblock %}
 
-        {# Profile button (menu: Log Out) #}
-        <details class="home-profile">
-            <summary aria-label="Account menu">
-                {# ASSET 1 - Figma "image 15" -> static/home/icon-profile.png (colored in home.css via mask) #}
-                <span class="mask-icon home-profile-icon" aria-hidden="true"></span>
-            </summary>
-            <nav class="home-profile-menu">
-                <a href="{% url 'logout' %}" class="logout">Log Out</a>
-            </nav>
-        </details>
-    </header>
-
-    <div class="home-shell">
-
-    {# ===== Welcome + search row ===== #}
-    <div class="home-top">
-        <h1 class="home-welcome">Welcome, <span class="name">{{ current_account.first_name }}!</span></h1>
-
-        <form class="home-search" method="get" action="{% url 'search' %}" role="search">
-            <input class="home-search-input" type="text" name="q"
-                   placeholder="Search Pharmacy/Medicine" aria-label="Search pharmacy or medicine">
-            <button type="submit" class="home-search-btn">Search</button>
-        </form>
+{% block content %}
+{% if not use_placeholders %}
+<div class="hm-filter-bar">
+    <p class="hm-filter-note">Showing verified pharmacies{% if open_only %} currently open{% endif %}.</p>
+    <div class="sr-chips" aria-label="Filter pharmacies">
+        <a class="sr-chip {% if not open_only %}active{% endif %}" href="{% url 'home' %}">All Pharmacies</a>
+        <a class="sr-chip {% if open_only %}active{% endif %}" href="{% url 'home' %}?open=1">Open Now</a>
     </div>
+</div>
+{% endif %}
 
-    {# Rectangle 1: raised outer shell  /  Rectangle 2: recessed inner panel (same as the login card) #}
-    <main class="home-panel">
-      <div class="home-panel-inner">
-        {% if messages %}
-        <ul class="home-messages" role="status">
-            {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
-        </ul>
-        {% endif %}
+{% if pharmacies %}
+<div class="home-grid">
+    {% for p in pharmacies %}
+    <article class="ph-card">
+        <div class="ph-card-inner">
 
-        {# Only this area scrolls #}
-        <div class="home-scroll">
-            {% if pharmacies %}
-            <div class="home-grid">
-                {% for p in pharmacies %}
-                <article class="ph-card">
-                    <div class="ph-card-inner">
-
-                        {# Grey placeholder until the pharmacy uploads a photo. #}
-                        {# TODO: once Pharmacy has an image field (e.g. `photo`), this swaps in automatically. #}
-                        <div class="ph-photo">
-                            {% if p.photo %}<img src="{{ p.photo.url }}" alt="{{ p.business_name }}">{% endif %}
-                        </div>
-
-                        <h2 class="ph-name">{{ p.business_name }}</h2>
-
-                        <p class="ph-line ph-address">
-                            {# ASSET 2 - Figma "image 13" -> static/home/icon-pin.png (colored in home.css via mask) #}
-                            <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
-                            <span>{{ p.address }}</span>
-                        </p>
-
-                        <p class="ph-line ph-hours">
-                            {# ASSET 3 - Figma "image 14" -> static/home/icon-clock.png (colored in home.css via mask) #}
-                            <span class="mask-icon ph-icon ph-icon-clock" aria-hidden="true"></span>
-                            {% if p.open_now is None %}
-                                <span class="ph-status unset">Hours not set</span>
-                            {% elif p.open_now %}
-                                <span class="ph-status open">OPEN</span>
-                                {% if p.hours_text %}<span class="ph-sep">|</span><span class="ph-time">{{ p.hours_text }}</span>{% endif %}
-                            {% else %}
-                                <span class="ph-status closed">CLOSED</span>
-                                {% if p.hours_text %}<span class="ph-sep">|</span><span class="ph-time">{{ p.hours_text }}</span>{% endif %}
-                            {% endif %}
-                        </p>
-
-                        {% if use_placeholders %}
-                        <a class="ph-btn" href="#">Check Stocks</a>
-                        {% else %}
-                        <a class="ph-btn" href="{% url 'pharmacy_detail' p.pharmacy_id %}">Check Stocks</a>
-                        {% endif %}
-                    </div>
-                </article>
-                {% endfor %}
+            <div class="ph-photo">
+                {% if p.photo %}<img src="{{ p.photo.url }}" alt="{{ p.business_name }}">{% endif %}
+                {% if not use_placeholders %}
+                <form class="ph-fav-form fav-ajax-form" method="post" action="{% url 'toggle_favorite' 'pharmacy' p.pharmacy_id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit"
+                            class="fav-icon-btn {% if p.is_favorite %}active{% endif %}"
+                            title="{% if p.is_favorite %}Remove from favorites{% else %}Add to favorites{% endif %}"
+                            aria-label="{% if p.is_favorite %}Remove {{ p.business_name }} from favorites{% else %}Add {{ p.business_name }} to favorites{% endif %}">
+                        {% if p.is_favorite %}♥{% else %}♡{% endif %}
+                    </button>
+                </form>
+                {% endif %}
             </div>
+
+            <h2 class="ph-name">{{ p.business_name }}</h2>
+
+            <p class="ph-line ph-address">
+                <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
+                <span>{{ p.address }}</span>
+            </p>
+
+            <p class="ph-line ph-hours">
+                <span class="mask-icon ph-icon ph-icon-clock" aria-hidden="true"></span>
+                {% if p.open_now is None %}
+                    <span class="ph-status unset">Hours not set</span>
+                {% elif p.open_now %}
+                    <span class="ph-status open">OPEN</span>
+                    {% if p.hours_text %}<span class="ph-sep">|</span><span class="ph-time">{{ p.hours_text }}</span>{% endif %}
+                {% else %}
+                    <span class="ph-status closed">CLOSED</span>
+                    {% if p.hours_text %}<span class="ph-sep">|</span><span class="ph-time">{{ p.hours_text }}</span>{% endif %}
+                {% endif %}
+            </p>
+
+            {% if use_placeholders %}
+            <a class="ph-btn" href="{% url 'search' %}">Check Stocks</a>
             {% else %}
-                <p class="home-empty">No pharmacies yet. Check back soon!</p>
+            <a class="ph-btn" href="{% url 'pharmacy_detail' p.pharmacy_id %}">Check Stocks</a>
             {% endif %}
         </div>
-      </div>
-    </main>
-
-    </div>{# /.home-shell #}
-
-</body>
-</html>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+    <div class="sr-empty">
+        <strong>{% if open_only %}No pharmacies are open right now{% else %}No pharmacies yet{% endif %}</strong>
+        <span>{% if open_only %}<a href="{% url 'home' %}">Show all verified pharmacies</a>{% else %}Check back soon!{% endif %}</span>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'user_base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block scroll_class %}sr-scroll{% endblock %}
+
+{% block top_bar %}
+<div class="sr-top">
+    <div class="sr-heading">
+        <h1 class="sr-title">My Profile</h1>
+        <p class="sr-sub">Manage your account details and password.</p>
+    </div>
+    <div class="actions">
+        <a href="{% url 'home' %}" class="btn secondary">← Back to Home</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="up-stats" aria-label="Account summary">
+    <a class="up-stat" href="{% url 'favorites' %}">
+        <div class="num">{{ favorite_count }}</div>
+        <div class="lbl">Saved favorites</div>
+    </a>
+    <a class="up-stat" href="{% url 'history' %}">
+        <div class="num">{{ search_count }}</div>
+        <div class="lbl">Search history items</div>
+    </a>
+    <div class="up-stat">
+        <div class="num" style="font-size:24px;padding:6px 0">{{ current_account.created_at|date:"M d, Y" }}</div>
+        <div class="lbl">Member since · Updated {{ current_account.updated_at|date:"M d, Y" }}</div>
+    </div>
+</section>
+
+<div class="up-two-col">
+    <section class="sr-card">
+        <h2 class="sr-card-title" style="font-size:22px">Account Details</h2>
+
+        <form method="post" action="{% url 'user_profile' %}" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_profile">
+
+            {% for field in profile_form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <ul class="errorlist">
+                    {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if profile_form.non_field_errors %}
+            <ul class="errorlist">
+                {% for error in profile_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+
+            <button type="submit" class="btn">Save Changes</button>
+        </form>
+    </section>
+
+    <section class="sr-card">
+        <h2 class="sr-card-title" style="font-size:22px">Change Password</h2>
+
+        <form method="post" action="{% url 'user_profile' %}" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="change_password">
+
+            {% for field in password_form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <ul class="errorlist">
+                    {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if password_form.non_field_errors %}
+            <ul class="errorlist">
+                {% for error in password_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+
+            <button type="submit" class="btn">Update Password</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

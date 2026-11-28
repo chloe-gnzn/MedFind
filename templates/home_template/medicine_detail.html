@@ -1,48 +1,132 @@
-{% extends 'base.html' %}
+{% extends 'user_base.html' %}
 {% block title %}{{ medicine.medicine_name }}{% endblock %}
-{% block content %}
-<div class="panel">
-    <div class="row-between">
-        <div>
-            <h1 class="page-title">{{ medicine.medicine_name }}</h1>
-            <p class="page-sub" style="margin-bottom:0">{{ medicine.generic_name }} · {{ medicine.strength }} {{ medicine.form }}</p>
-        </div>
-        <form method="post" action="{% url 'toggle_favorite' 'medicine' medicine.medicine_id %}" class="inline">
+
+{% block top_bar %}
+<div class="sr-top">
+    <div class="sr-heading">
+        <h1 class="sr-title">{{ medicine.medicine_name }}</h1>
+        <p class="sr-sub">{{ medicine.generic_name }} · {{ medicine.strength }} {{ medicine.form }}</p>
+    </div>
+
+    <div class="actions">
+        <a href="{% url 'search' %}" class="btn secondary">← Back to search</a>
+        <form method="post" action="{% url 'toggle_favorite' 'medicine' medicine.medicine_id %}" class="inline fav-ajax-form">
             {% csrf_token %}
-            <input type="hidden" name="next" value="{{ request.path }}">
-            <button type="submit" class="btn {% if is_favorite %}danger{% else %}secondary{% endif %}">
-                {% if is_favorite %}♥ Remove favorite{% else %}♡ Add to favorites{% endif %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="btn {% if is_favorite %}danger{% else %}{% endif %}">
+                {% if is_favorite %}♥ Remove Favorite{% else %}♡ Add to Favorites{% endif %}
             </button>
         </form>
     </div>
-    <p><span class="chip">{{ medicine.category.category_name }}</span></p>
-    {% if medicine.description %}<p>{{ medicine.description }}</p>{% endif %}
 </div>
+{% endblock %}
 
-<div class="panel">
-    <h2>Where to find it</h2>
+{% block content %}
+<section class="sr-card">
+    <div class="up-hero-meta" style="margin-top:0">
+        <span class="sr-chip active">{{ medicine.category.category_name }}</span>
+        {% if best_price is not None %}
+            <span class="badge best">Lowest in-stock price: ₱{{ best_price|floatformat:2 }}</span>
+        {% endif %}
+        <span class="badge">{{ listings|length }} listing{{ listings|length|pluralize }}</span>
+    </div>
+    {% if medicine.description %}
+        <p class="up-description">{{ medicine.description }}</p>
+    {% endif %}
+    {% if medicine.category.description %}
+        <p class="muted" style="margin:10px 0 0">{{ medicine.category.description }}</p>
+    {% endif %}
+</section>
+
+<section class="sr-card">
+    <div class="up-card-head">
+        <h2 class="sr-card-title">Where to find it</h2>
+
+        <form class="up-filter-form" method="get" action="{% url 'medicine_detail' medicine.medicine_id %}">
+            <select class="up-select" name="sort" aria-label="Sort listings" onchange="this.form.submit()">
+                <option value="price" {% if sort == 'price' %}selected{% endif %}>Sort: Lowest Price</option>
+                <option value="stock" {% if sort == 'stock' %}selected{% endif %}>Sort: Highest Stock</option>
+                <option value="name" {% if sort == 'name' %}selected{% endif %}>Sort: Pharmacy Name</option>
+            </select>
+
+            <label class="sr-chip {% if in_stock_only %}active{% endif %}" style="cursor:pointer">
+                <input type="checkbox" name="in_stock" value="1" {% if in_stock_only %}checked{% endif %} onchange="this.form.submit()" hidden>
+                In stock only
+            </label>
+
+            <label class="sr-chip {% if open_now_only %}active{% endif %}" style="cursor:pointer">
+                <input type="checkbox" name="open_now" value="1" {% if open_now_only %}checked{% endif %} onchange="this.form.submit()" hidden>
+                Open now
+            </label>
+
+            {% if in_stock_only or open_now_only or sort != 'price' %}
+            <a class="btn secondary small" href="{% url 'medicine_detail' medicine.medicine_id %}">Reset</a>
+            {% endif %}
+        </form>
+    </div>
+
     {% if listings %}
     <div class="table-wrap">
     <table class="data">
-        <tr><th>Pharmacy</th><th>Price</th><th>Availability</th><th>Today</th><th></th></tr>
+        <thead>
+            <tr>
+                <th>Pharmacy</th>
+                <th>Price</th>
+                <th>Availability</th>
+                <th>Today</th>
+                <th>Updated</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
         {% for l in listings %}
-        <tr>
-            <td><a class="title" href="{% url 'pharmacy_detail' l.pharmacy.pharmacy_id %}">{{ l.pharmacy.business_name }}</a>
-                <div class="muted">{{ l.pharmacy.address }}</div></td>
-            <td>₱{{ l.price|floatformat:2 }}</td>
-            <td><span class="badge {{ l.availability_status }}">{{ l.get_availability_status_display }}</span>
-                <div class="muted">{{ l.stock_quantity }} in stock</div></td>
-            <td>{% if l.open_now is None %}<span class="muted">Hours not set</span>
-                {% elif l.open_now %}<span class="badge green">Open now</span>
-                {% else %}<span class="badge red">Closed</span>{% endif %}</td>
-            <td class="muted">{{ l.pharmacy.contact_number }}</td>
-        </tr>
+            <tr>
+                <td>
+                    <a class="title" href="{% url 'pharmacy_detail' l.pharmacy.pharmacy_id %}">{{ l.pharmacy.business_name }}</a>
+                    <div class="muted">{{ l.pharmacy.address }}</div>
+                    {% if l.pharmacy.contact_number %}<div class="muted">{{ l.pharmacy.contact_number }}</div>{% endif %}
+                </td>
+                <td class="price-cell">
+                    ₱{{ l.price|floatformat:2 }}
+                    {% if best_price is not None and l.price == best_price and l.availability_status != 'out_of_stock' %}
+                        <div><span class="badge best" style="margin-top:4px">Best price</span></div>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge {{ l.availability_status }}">{{ l.get_availability_status_display }}</span>
+                    <div class="muted" style="margin-top:4px">{{ l.stock_quantity }} in stock</div>
+                </td>
+                <td>
+                    {% if l.open_now is None %}<span class="sr-badge unset">Hours not set</span>
+                    {% elif l.open_now %}<span class="sr-badge in">Open now</span>
+                    {% else %}<span class="sr-badge out">Closed</span>{% endif %}
+                </td>
+                <td class="muted">{{ l.updated_at|date:"M d, Y g:i A" }}</td>
+                <td>
+                    <div class="actions">
+                        <form class="inline fav-ajax-form" method="post" action="{% url 'toggle_favorite' 'pharmacy' l.pharmacy.pharmacy_id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit"
+                                    class="fav-icon-btn {% if l.is_pharmacy_favorite %}active{% endif %}"
+                                    title="{% if l.is_pharmacy_favorite %}Remove pharmacy favorite{% else %}Favorite pharmacy{% endif %}"
+                                    aria-label="Toggle favorite for {{ l.pharmacy.business_name }}">
+                                {% if l.is_pharmacy_favorite %}♥{% else %}♡{% endif %}
+                            </button>
+                        </form>
+                        <a class="sr-view" href="{% url 'pharmacy_detail' l.pharmacy.pharmacy_id %}">Visit</a>
+                    </div>
+                </td>
+            </tr>
         {% endfor %}
+        </tbody>
     </table>
     </div>
     {% else %}
-        <div class="empty">No verified pharmacy lists this medicine yet.</div>
+        <div class="sr-empty">
+            <strong>No matching pharmacy listings</strong>
+            <span>{% if in_stock_only or open_now_only %}Try clearing the filters to see all verified pharmacies.{% else %}No verified pharmacy lists this medicine yet.{% endif %}</span>
+        </div>
     {% endif %}
-</div>
-<a href="{% url 'search' %}" class="btn secondary">← Back to search</a>
+</section>
 {% endblock %}

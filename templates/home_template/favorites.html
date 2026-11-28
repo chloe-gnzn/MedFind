@@ -1,36 +1,97 @@
-{% extends 'base.html' %}
+{% extends 'user_base.html' %}
 {% block title %}Favorites{% endblock %}
+{% block scroll_class %}sr-scroll{% endblock %}
+
+{% block top_bar %}
+<div class="sr-top">
+    <div class="sr-heading">
+        <h1 class="sr-title">Your Favorites</h1>
+        <p class="sr-sub">Medicines and pharmacies you saved for quick access.</p>
+    </div>
+    <div class="actions">
+        <a href="{% url 'search' %}" class="btn">Browse Medicines</a>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
-<h1 class="page-title">Your favorites</h1>
-<p class="page-sub">Medicines and pharmacies you saved.</p>
+<section class="sr-card">
+    <h2 class="sr-card-title">Medicines ({{ medicine_favs|length }})</h2>
 
-<div class="panel">
-    <h2>Medicines</h2>
+    <div class="sr-list">
     {% for f in medicine_favs %}
-    <div class="list-item">
-        <div>
-            <a class="title" href="{% url 'medicine_detail' f.medicine.medicine_id %}">{{ f.medicine.medicine_name }}</a>
-            <div class="muted">{{ f.medicine.generic_name }} · {{ f.medicine.strength }} {{ f.medicine.form }}</div>
+        <article class="sr-row">
+            <div class="sr-row-main">
+                <a class="sr-row-title" href="{% url 'medicine_detail' f.medicine.medicine_id %}">{{ f.medicine.medicine_name }}</a>
+                <p class="sr-row-meta">
+                    {{ f.medicine.generic_name }}<span class="sr-dot">·</span>{{ f.medicine.strength }} {{ f.medicine.form }}<span class="sr-dot">·</span>{{ f.medicine.category.category_name }}<span class="sr-dot">·</span>Saved {{ f.created_at|date:"M d, Y" }}
+                </p>
+            </div>
+            <div class="sr-row-side">
+                {% if f.min_price is not None %}
+                    <span class="badge best">from ₱{{ f.min_price|floatformat:2 }}</span>
+                {% endif %}
+                {% if f.pharmacy_count %}
+                    <span class="sr-badge in">In stock at {{ f.pharmacy_count }}</span>
+                {% else %}
+                    <span class="sr-badge out">Not in stock</span>
+                {% endif %}
+                <a class="sr-view" href="{% url 'medicine_detail' f.medicine.medicine_id %}">View</a>
+                <form method="post" action="{% url 'toggle_favorite' 'medicine' f.medicine.medicine_id %}" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'favorites' %}">
+                    <button type="submit" class="btn danger small">Remove</button>
+                </form>
+            </div>
+        </article>
+    {% empty %}
+        <div class="sr-empty">
+            <strong>No favorite medicines yet</strong>
+            <span>Tap the heart icon on any medicine to save it here.</span>
         </div>
-        <form method="post" action="{% url 'toggle_favorite' 'medicine' f.medicine.medicine_id %}" class="inline">
-            {% csrf_token %}<button class="btn danger small">Remove</button>
-        </form>
+    {% endfor %}
     </div>
-    {% empty %}<div class="empty">No favorite medicines yet.</div>{% endfor %}
-</div>
+</section>
 
-<div class="panel">
-    <h2>Pharmacies</h2>
+<section class="sr-card">
+    <h2 class="sr-card-title">Pharmacies ({{ pharmacy_favs|length }})</h2>
+
+    <div class="sr-list">
     {% for f in pharmacy_favs %}
-    <div class="list-item">
-        <div>
-            <a class="title" href="{% url 'pharmacy_detail' f.pharmacy.pharmacy_id %}">{{ f.pharmacy.business_name }}</a>
-            <div class="muted">{{ f.pharmacy.address }}</div>
+        <article class="sr-row">
+            <div class="sr-row-main">
+                <a class="sr-row-title" href="{% url 'pharmacy_detail' f.pharmacy.pharmacy_id %}">{{ f.pharmacy.business_name }}</a>
+                <p class="sr-row-meta sr-with-icon">
+                    <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
+                    <span>
+                        {{ f.pharmacy.address }}
+                        {% if f.pharmacy.hours_text %}<span class="sr-dot">·</span>{{ f.pharmacy.hours_text }}{% endif %}
+                        <span class="sr-dot">·</span>Saved {{ f.created_at|date:"M d, Y" }}
+                    </span>
+                </p>
+            </div>
+            <div class="sr-row-side">
+                {% if f.pharmacy.open_now is None %}
+                    <span class="sr-badge unset">Hours not set</span>
+                {% elif f.pharmacy.open_now %}
+                    <span class="sr-badge in">Open now</span>
+                {% else %}
+                    <span class="sr-badge out">Closed</span>
+                {% endif %}
+                <a class="sr-view" href="{% url 'pharmacy_detail' f.pharmacy.pharmacy_id %}">Check Stocks</a>
+                <form method="post" action="{% url 'toggle_favorite' 'pharmacy' f.pharmacy.pharmacy_id %}" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'favorites' %}">
+                    <button type="submit" class="btn danger small">Remove</button>
+                </form>
+            </div>
+        </article>
+    {% empty %}
+        <div class="sr-empty">
+            <strong>No favorite pharmacies yet</strong>
+            <span>Tap the heart icon on any pharmacy card or detail page to save it here.</span>
         </div>
-        <form method="post" action="{% url 'toggle_favorite' 'pharmacy' f.pharmacy.pharmacy_id %}" class="inline">
-            {% csrf_token %}<button class="btn danger small">Remove</button>
-        </form>
+    {% endfor %}
     </div>
-    {% empty %}<div class="empty">No favorite pharmacies yet.</div>{% endfor %}
-</div>
+</section>
 {% endblock %}

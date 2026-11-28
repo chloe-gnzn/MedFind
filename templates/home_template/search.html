@@ -1,156 +1,240 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MedFind | Search</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@600&family=Alexandria:wght@300;400;700&family=Lalezar&display=swap" rel="stylesheet">
-    {# home.css already holds the shared nav, profile menu, panel shell and buttons #}
-    <link rel="stylesheet" href="{% static 'css/home.css' %}">
-    <link rel="stylesheet" href="{% static 'css/search.css' %}">
-</head>
-<body class="home-page search-page">
+{% extends 'user_base.html' %}
+{% block title %}Search{% endblock %}
+{% block body_class %}search-page{% endblock %}
+{% block scroll_class %}sr-scroll{% endblock %}
 
-    {# ===== Top navigation bar (same as Home) ===== #}
-    <header class="home-nav">
-        <a class="home-logo" href="{% url 'home' %}" aria-label="MedFind+">MedFind<span class="plus">+</span></a>
+{% block top_bar %}
+<div class="sr-top">
+    <div class="sr-heading">
+        <h1 class="sr-title">Search</h1>
+        <p class="sr-sub">Look up a medicine by brand or generic name, compare prices, or find an open pharmacy.</p>
+    </div>
 
-        <nav class="home-nav-links" aria-label="Main">
-            <a href="{% url 'home' %}">Home</a>
-            <a href="{% url 'favorites' %}">Favorites</a>
-            <a href="{% url 'history' %}">History</a>
-        </nav>
+    <form class="sr-form" method="get" action="{% url 'search' %}" role="search">
+        {% if category_id %}<input type="hidden" name="category" value="{{ category_id }}">{% endif %}
+        {% if med_form %}<input type="hidden" name="form" value="{{ med_form }}">{% endif %}
+        {% if in_stock_only %}<input type="hidden" name="in_stock" value="1">{% endif %}
+        {% if open_now_only %}<input type="hidden" name="open_now" value="1">{% endif %}
+        {% if sort != 'name' %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+        <input class="sr-input" type="text" name="q" value="{{ q }}"
+               placeholder="Search Pharmacy/Medicine" aria-label="Search pharmacy or medicine" autocomplete="off">
+        <button type="submit" class="sr-btn">Search</button>
+    </form>
+</div>
+{% endblock %}
 
-        {# Profile button (menu: Log Out). Icon = static/home/icon-profile.png, colored in home.css #}
-        <details class="home-profile">
-            <summary aria-label="Account menu">
-                <span class="mask-icon home-profile-icon" aria-hidden="true"></span>
-            </summary>
-            <nav class="home-profile-menu">
-                <a href="{% url 'logout' %}" class="logout">Log Out</a>
-            </nav>
-        </details>
-    </header>
+{% block content %}
+{# ---- Category filter chips ---- #}
+{% if categories %}
+<nav class="sr-chips" aria-label="Filter medicines by category">
+    <a class="sr-chip {% if not category_id %}active{% endif %}"
+       href="{% url 'search' %}?{% if q %}q={{ q|urlencode }}&amp;{% endif %}{% if med_form %}form={{ med_form|urlencode }}&amp;{% endif %}{% if in_stock_only %}in_stock=1&amp;{% endif %}{% if open_now_only %}open_now=1&amp;{% endif %}{% if sort != 'name' %}sort={{ sort|urlencode }}{% endif %}">All</a>
+    {% for c in categories %}
+    <a class="sr-chip {% if category_id == c.category_id|stringformat:'s' %}active{% endif %}"
+       href="{% url 'search' %}?category={{ c.category_id }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}{% if med_form %}&amp;form={{ med_form|urlencode }}{% endif %}{% if in_stock_only %}&amp;in_stock=1{% endif %}{% if open_now_only %}&amp;open_now=1{% endif %}{% if sort != 'name' %}&amp;sort={{ sort|urlencode }}{% endif %}">{{ c.category_name }}</a>
+    {% endfor %}
+</nav>
+{% endif %}
 
-    <div class="home-shell">
+{% if selected_category and selected_category.description %}
+<p class="up-cat-note"><strong>{{ selected_category.category_name }}:</strong> {{ selected_category.description }}</p>
+{% endif %}
 
-        {# ===== Title (left) + search (right) ===== #}
-        <div class="sr-top">
-            <div class="sr-heading">
-                <h1 class="sr-title">Search</h1>
-                <p class="sr-sub">Look up a medicine by brand or generic name, or find a pharmacy.</p>
+{# ---- Additional filters & sorting ---- #}
+<form class="up-filter-form" method="get" action="{% url 'search' %}">
+    {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+    {% if category_id %}<input type="hidden" name="category" value="{{ category_id }}">{% endif %}
+
+    <select class="up-select" name="form" aria-label="Filter by medicine form" onchange="this.form.submit()">
+        <option value="">All forms</option>
+        {% for f in medicine_forms %}
+        <option value="{{ f }}" {% if med_form|lower == f|lower %}selected{% endif %}>{{ f }}</option>
+        {% endfor %}
+    </select>
+
+    <select class="up-select" name="sort" aria-label="Sort medicines" onchange="this.form.submit()">
+        <option value="name" {% if sort == 'name' %}selected{% endif %}>Sort: Name (A–Z)</option>
+        <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Sort: Lowest Price</option>
+        <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Sort: Highest Price</option>
+        <option value="availability" {% if sort == 'availability' %}selected{% endif %}>Sort: Most Pharmacies</option>
+    </select>
+
+    <label class="sr-chip {% if in_stock_only %}active{% endif %}" style="cursor:pointer">
+        <input type="checkbox" name="in_stock" value="1" {% if in_stock_only %}checked{% endif %} onchange="this.form.submit()" hidden>
+        In stock only
+    </label>
+
+    <label class="sr-chip {% if open_now_only %}active{% endif %}" style="cursor:pointer">
+        <input type="checkbox" name="open_now" value="1" {% if open_now_only %}checked{% endif %} onchange="this.form.submit()" hidden>
+        Open now
+    </label>
+
+    {% if q or category_id or med_form or in_stock_only or open_now_only or sort != 'name' %}
+    <a class="btn secondary small" href="{% url 'search' %}">Reset</a>
+    {% endif %}
+</form>
+
+{# ================= Medicines ================= #}
+<section class="sr-card {% if medicines|length > 3 %}is-collapsed{% endif %}" id="sr-med-card" aria-labelledby="sr-med-h">
+    <div class="up-card-head">
+        <h2 class="sr-card-title" id="sr-med-h">Medicines ({{ medicines|length }})</h2>
+        {% if medicines|length > 3 %}
+        <button type="button"
+                class="btn secondary small sr-expand-toggle"
+                data-target="sr-med-card"
+                data-label-expand="Expand ({{ medicines|length }})"
+                data-label-collapse="Minimize"
+                aria-expanded="false"
+                aria-controls="sr-med-list">
+            Expand ({{ medicines|length }})
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="sr-list" id="sr-med-list">
+    {% for m in medicines %}
+        <article class="sr-row">
+            <div class="sr-row-main">
+                <a class="sr-row-title" href="{% url 'medicine_detail' m.medicine_id %}">{{ m.medicine_name }}</a>
+                <p class="sr-row-meta">
+                    {{ m.generic_name }}<span class="sr-dot">·</span>{{ m.strength }} {{ m.form }}<span class="sr-dot">·</span>{{ m.category.category_name }}
+                </p>
             </div>
-
-            <form class="sr-form" method="get" action="{% url 'search' %}" role="search">
-                {% if category_id %}<input type="hidden" name="category" value="{{ category_id }}">{% endif %}
-                <input class="sr-input" type="text" name="q" value="{{ q }}"
-                       placeholder="Search Pharmacy/Medicine" aria-label="Search pharmacy or medicine" autocomplete="off">
-                <button type="submit" class="sr-btn">Search</button>
-            </form>
-        </div>
-
-        {# Rectangle 1: raised outer shell  /  Rectangle 2: recessed inner panel #}
-        <main class="home-panel">
-          <div class="home-panel-inner">
-            {% if messages %}
-            <ul class="home-messages" role="status">
-                {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
-            </ul>
-            {% endif %}
-
-            <div class="home-scroll sr-scroll">
-
-                {# ---- Category filter chips (keeps the search term) ---- #}
-                {% if categories %}
-                <nav class="sr-chips" aria-label="Filter medicines by category">
-                    <a class="sr-chip {% if not category_id %}active{% endif %}"
-                       href="{% url 'search' %}{% if q %}?q={{ q|urlencode }}{% endif %}">All</a>
-                    {% for c in categories %}
-                    <a class="sr-chip {% if category_id == c.category_id|stringformat:'s' %}active{% endif %}"
-                       href="{% url 'search' %}?{% if q %}q={{ q|urlencode }}&amp;{% endif %}category={{ c.category_id }}">{{ c.category_name }}</a>
-                    {% endfor %}
-                </nav>
+            <div class="sr-row-side">
+                {% if m.min_price is not None %}
+                    <span class="badge best">
+                        {% if m.min_price == m.max_price %}₱{{ m.min_price|floatformat:2 }}{% else %}from ₱{{ m.min_price|floatformat:2 }}{% endif %}
+                    </span>
                 {% endif %}
-
-                {# ================= Medicines ================= #}
-                <section class="sr-card" aria-labelledby="sr-med-h">
-                    <h2 class="sr-card-title" id="sr-med-h">Medicines ({{ medicines|length }})</h2>
-
-                    <div class="sr-list">
-                    {% for m in medicines %}
-                        <article class="sr-row">
-                            <div class="sr-row-main">
-                                <a class="sr-row-title" href="{% url 'medicine_detail' m.medicine_id %}">{{ m.medicine_name }}</a>
-                                <p class="sr-row-meta">
-                                    {{ m.generic_name }}<span class="sr-dot">·</span>{{ m.strength }} {{ m.form }}<span class="sr-dot">·</span>{{ m.category.category_name }}
-                                </p>
-                            </div>
-                            <div class="sr-row-side">
-                                {% if m.pharmacy_count %}
-                                    <span class="sr-badge in">In stock at {{ m.pharmacy_count }} pharmac{{ m.pharmacy_count|pluralize:"y,ies" }}</span>
-                                {% else %}
-                                    <span class="sr-badge out">Not in stock nearby</span>
-                                {% endif %}
-                                <a class="sr-view" href="{% url 'medicine_detail' m.medicine_id %}">View</a>
-                            </div>
-                        </article>
-                    {% empty %}
-                        <div class="sr-empty">
-                            <strong>No medicines found</strong>
-                            <span>Try a brand or generic name, or clear the category filter.</span>
-                        </div>
-                    {% endfor %}
-                    </div>
-                </section>
-
-                {# ================= Pharmacies ================= #}
-                <section class="sr-card" aria-labelledby="sr-ph-h">
-                    <h2 class="sr-card-title" id="sr-ph-h">Pharmacies ({{ pharmacies|length }})</h2>
-
-                    <div class="sr-list">
-                    {% for p in pharmacies %}
-                        <article class="sr-row">
-                            <div class="sr-row-main">
-                                <a class="sr-row-title" href="{% url 'pharmacy_detail' p.pharmacy_id %}">{{ p.business_name }}</a>
-                                <p class="sr-row-meta sr-with-icon">
-                                    {# Same pin asset as Home: static/home/icon-pin.png #}
-                                    <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
-                                    <span>{{ p.address }}{% if p.contact_number %}<span class="sr-dot">·</span>{{ p.contact_number }}{% endif %}</span>
-                                </p>
-                            </div>
-                            <div class="sr-row-side">
-                                {% if p.open_now is None %}
-                                    <span class="sr-badge unset">Hours not set</span>
-                                {% elif p.open_now %}
-                                    <span class="sr-badge in">Open now</span>
-                                {% else %}
-                                    <span class="sr-badge out">Closed</span>
-                                {% endif %}
-                                <a class="sr-view" href="{% url 'pharmacy_detail' p.pharmacy_id %}">Check Stocks</a>
-                            </div>
-                        </article>
-                    {% empty %}
-                        <div class="sr-empty">
-                            {% if q %}
-                                <strong>No pharmacies found</strong>
-                                <span>We couldn't find a pharmacy matching “{{ q }}”.</span>
-                            {% else %}
-                                <strong>Search for a pharmacy</strong>
-                                <span>Type a pharmacy name or street above to see matches here.</span>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                    </div>
-                </section>
-
+                {% if m.pharmacy_count %}
+                    <span class="sr-badge in">In stock at {{ m.pharmacy_count }} pharmac{{ m.pharmacy_count|pluralize:"y,ies" }}</span>
+                {% else %}
+                    <span class="sr-badge out">Not in stock{% if open_now_only %} (open){% endif %}</span>
+                {% endif %}
+                <form class="inline fav-ajax-form" method="post" action="{% url 'toggle_favorite' 'medicine' m.medicine_id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit"
+                            class="fav-icon-btn {% if m.medicine_id in fav_medicine_ids %}active{% endif %}"
+                            title="{% if m.medicine_id in fav_medicine_ids %}Remove favorite{% else %}Add to favorites{% endif %}"
+                            aria-label="Toggle favorite for {{ m.medicine_name }}">
+                        {% if m.medicine_id in fav_medicine_ids %}♥{% else %}♡{% endif %}
+                    </button>
+                </form>
+                <a class="sr-view" href="{% url 'medicine_detail' m.medicine_id %}">View</a>
             </div>
-          </div>
-        </main>
+        </article>
+    {% empty %}
+        <div class="sr-empty">
+            <strong>No medicines found</strong>
+            <span>Try a different brand or generic name, or adjust your filters.</span>
+        </div>
+    {% endfor %}
+    </div>
 
-    </div>{# /.home-shell #}
+    {% if medicines|length > 3 %}
+    <div class="sr-expand-row">
+        <button type="button"
+                class="btn secondary small sr-expand-btn sr-expand-toggle"
+                data-target="sr-med-card"
+                data-label-expand="Show all {{ medicines|length }} medicines"
+                data-label-collapse="Show fewer medicines"
+                aria-expanded="false"
+                aria-controls="sr-med-list">
+            Show all {{ medicines|length }} medicines
+        </button>
+    </div>
+    {% endif %}
+</section>
 
-</body>
-</html>
+{# ================= Pharmacies ================= #}
+<section class="sr-card {% if pharmacies|length > 3 %}is-collapsed{% endif %}" id="sr-ph-card" aria-labelledby="sr-ph-h">
+    <div class="up-card-head">
+        <h2 class="sr-card-title" id="sr-ph-h">Pharmacies ({{ pharmacies|length }})</h2>
+        {% if pharmacies|length > 3 %}
+        <button type="button"
+                class="btn secondary small sr-expand-toggle"
+                data-target="sr-ph-card"
+                data-label-expand="Expand ({{ pharmacies|length }})"
+                data-label-collapse="Minimize"
+                aria-expanded="false"
+                aria-controls="sr-ph-list">
+            Expand ({{ pharmacies|length }})
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="sr-list" id="sr-ph-list">
+    {% for p in pharmacies %}
+        <article class="sr-row">
+            <div class="sr-row-main">
+                <a class="sr-row-title" href="{% url 'pharmacy_detail' p.pharmacy_id %}">{{ p.business_name }}</a>
+                <p class="sr-row-meta sr-with-icon">
+                    <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
+                    <span>
+                        {{ p.address }}{% if p.contact_number %}<span class="sr-dot">·</span>{{ p.contact_number }}{% endif %}
+                        {% if p.hours_text %}<span class="sr-dot">·</span>{{ p.hours_text }}{% endif %}
+                    </span>
+                </p>
+            </div>
+            <div class="sr-row-side">
+                {% if p.open_now is None %}
+                    <span class="sr-badge unset">Hours not set</span>
+                {% elif p.open_now %}
+                    <span class="sr-badge in">Open now</span>
+                {% else %}
+                    <span class="sr-badge out">Closed</span>
+                {% endif %}
+                <form class="inline fav-ajax-form" method="post" action="{% url 'toggle_favorite' 'pharmacy' p.pharmacy_id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit"
+                            class="fav-icon-btn {% if p.pharmacy_id in fav_pharmacy_ids %}active{% endif %}"
+                            title="{% if p.pharmacy_id in fav_pharmacy_ids %}Remove favorite{% else %}Add to favorites{% endif %}"
+                            aria-label="Toggle favorite for {{ p.business_name }}">
+                        {% if p.pharmacy_id in fav_pharmacy_ids %}♥{% else %}♡{% endif %}
+                    </button>
+                </form>
+                <a class="sr-view" href="{% url 'pharmacy_detail' p.pharmacy_id %}">Check Stocks</a>
+            </div>
+        </article>
+    {% empty %}
+        <div class="sr-empty">
+            <strong>No pharmacies found</strong>
+            <span>{% if q %}We couldn't find a pharmacy matching “{{ q }}”.{% else %}No pharmacies match the current filters.{% endif %}</span>
+        </div>
+    {% endfor %}
+    </div>
+
+    {% if pharmacies|length > 3 %}
+    <div class="sr-expand-row">
+        <button type="button"
+                class="btn secondary small sr-expand-btn sr-expand-toggle"
+                data-target="sr-ph-card"
+                data-label-expand="Show all {{ pharmacies|length }} pharmacies"
+                data-label-collapse="Show fewer pharmacies"
+                aria-expanded="false"
+                aria-controls="sr-ph-list">
+            Show all {{ pharmacies|length }} pharmacies
+        </button>
+    </div>
+    {% endif %}
+</section>
+
+<script>
+(function () {
+    document.addEventListener('click', function (event) {
+        const trigger = event.target.closest('.sr-expand-toggle');
+        if (!trigger) return;
+        const card = document.getElementById(trigger.dataset.target);
+        if (!card) return;
+
+        const isExpanded = card.classList.toggle('is-collapsed') === false;
+        card.querySelectorAll('.sr-expand-toggle').forEach(function (btn) {
+            btn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+            btn.textContent = isExpanded ? btn.dataset.labelCollapse : btn.dataset.labelExpand;
+        });
+    });
+})();
+</script>
+{% endblock %}

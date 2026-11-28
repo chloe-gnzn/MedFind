@@ -1,18 +1,49 @@
-{% extends 'base.html' %}
-{% block title %}Search history{% endblock %}
-{% block content %}
-<div class="row-between">
-    <div><h1 class="page-title">Search history</h1><p class="page-sub">Your latest searches.</p></div>
+{% extends 'user_base.html' %}
+{% block title %}Search History{% endblock %}
+{% block scroll_class %}sr-scroll{% endblock %}
+
+{% block top_bar %}
+<div class="sr-top">
+    <div class="sr-heading">
+        <h1 class="sr-title">Search History</h1>
+        <p class="sr-sub">Re-run or clean up your latest medicine and pharmacy searches.</p>
+    </div>
     {% if searches %}
-    <form method="post" action="{% url 'clear_history' %}">{% csrf_token %}<button class="btn danger">Clear history</button></form>
+    <div class="actions">
+        <form method="post" action="{% url 'clear_history' %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="btn danger">Clear All History</button>
+        </form>
+    </div>
     {% endif %}
 </div>
-<div class="panel">
+{% endblock %}
+
+{% block content %}
+<section class="sr-card">
+    <h2 class="sr-card-title">Recent Searches ({{ searches|length }})</h2>
+
+    <div class="sr-list">
     {% for s in searches %}
-    <div class="list-item">
-        <a class="title" href="{% url 'search' %}?q={{ s.search_term|urlencode }}">{{ s.search_term }}</a>
-        <span class="muted">{{ s.searched_at|date:"M d, Y g:i A" }}</span>
+        <article class="sr-row">
+            <div class="sr-row-main">
+                <a class="sr-row-title" href="{% url 'search' %}?q={{ s.search_term|urlencode }}">{{ s.search_term }}</a>
+                <p class="sr-row-meta">{{ s.searched_at|date:"M d, Y g:i A" }}</p>
+            </div>
+            <div class="sr-row-side">
+                <a class="sr-view" href="{% url 'search' %}?q={{ s.search_term|urlencode }}">Search again</a>
+                <form method="post" action="{% url 'delete_history_item' s.search_id %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn danger small" aria-label="Remove {{ s.search_term }} from history">Remove</button>
+                </form>
+            </div>
+        </article>
+    {% empty %}
+        <div class="sr-empty">
+            <strong>No searches yet</strong>
+            <span>Try searching for a medicine or pharmacy to see your history here.</span>
+        </div>
+    {% endfor %}
     </div>
-    {% empty %}<div class="empty">No searches yet. Try searching for a medicine!</div>{% endfor %}
-</div>
+</section>
 {% endblock %}

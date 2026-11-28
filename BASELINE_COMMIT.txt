@@ -1,2 +1,0 @@
-﻿2fe22f21d3e812b23ed1029ab2e5a95237ee8ad2 | Chloe Geonzon | 2026-11-10 17:26:46 +0800 | feat(home): add Search button next to the search bar
-34acb4757b614467848dfcf7da79b2d5f9520958 | chloe-gnzn | 2026-11-24 13:52:05 +0800 | feat: added SQL join and sub queries + admin screens

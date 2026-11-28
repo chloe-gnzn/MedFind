@@ -1,13 +1,28 @@
-from django import forms
+import re
 
+from django import forms
+from django.contrib.auth import password_validation
+from django.core.exceptions import ValidationError
+
+from home_app.models import User
 from medfind_project.session_auth import get_account_model
 
 
-class LoginForm(forms.Form):
-    """Email + password login for any of the three ERD account types."""
+def normalize_phone(value):
+    """Strip formatting characters from a phone number for comparison."""
+    digits = re.sub(r'[^\d+]', '', (value or '').strip())
+    if digits.startswith('+63') and len(digits) == 13:
+        return '0' + digits[3:]
+    if digits.startswith('63') and len(digits) == 12:
+        return '0' + digits[2:]
+    return digits
 
-    email = forms.EmailField(
-        widget=forms.EmailInput(attrs={
+
+class LoginForm(forms.Form):
+    """Email (or phone number for users) + password login for ERD account types."""
+
+    email = forms.CharField(
+        widget=forms.TextInput(attrs={
             'class': 'login-input',
             'placeholder': 'email/phone no.',
             'autocomplete': 'username',
@@ -25,27 +40,119 @@ class LoginForm(forms.Form):
     account = None  # filled in by clean() when the credentials are valid
 
     def __init__(self, *args, role='user', **kwargs):
-        # The role is decided by WHICH login page is used (/, /pharmacy-portal/login/,
+        # The role is decided by WHICH login page is used (/login/login/, /pharmacy-portal/login/,
         # /manage/login/), not by a dropdown the visitor can change.
         super().__init__(*args, **kwargs)
         self.role = role
-        if role == 'pharmacy':
-            # pharmacies log in with their email only
+        if role != 'user':
             self.fields['email'].widget.attrs['placeholder'] = 'email'
+
+    def _find_user_account(self, identifier):
+        model = get_account_model('user')
+        by_email = model.objects.filter(email__iexact=identifier).first()
+        if by_email is not None:
+            return by_email
+
+        norm = normalize_phone(identifier)
+        if not norm:
+            return None
+        matches = [
+            u for u in model.objects.exclude(phone_number='')
+            if normalize_phone(u.phone_number) == norm
+        ]
+        if len(matches) > 1:
+            raise ValidationError(
+                'Multiple accounts share that phone number. Please log in with your email.'
+            )
+        return matches[0] if matches else None
 
     def clean(self):
         cleaned = super().clean()
         role = self.role
-        email = cleaned.get('email')
+        identifier = (cleaned.get('email') or '').strip()
         password = cleaned.get('password')
 
-        if role and email and password:
-            account = get_account_model(role).objects.filter(email__iexact=email.strip()).first()
+        if role and identifier and password:
+            if role == 'user':
+                account = self._find_user_account(identifier)
+                invalid_msg = 'Invalid email/phone number or password.'
+            else:
+                account = get_account_model(role).objects.filter(email__iexact=identifier).first()
+                invalid_msg = 'Invalid email or password.'
+
             if account is None or not account.check_password(password):
-                raise forms.ValidationError(
-                    'Invalid email or password.'
-                )
+                raise ValidationError(invalid_msg)
             if role == 'pharmacy' and not account.is_active:
-                raise forms.ValidationError('This pharmacy account has been deactivated.')
+                raise ValidationError('This pharmacy account has been deactivated.')
             self.account = account
         return cleaned
+
+
+class ForgotPasswordForm(forms.Form):
+    """Reset a user's password by verifying their registered email and phone number."""
+
+    email = forms.EmailField(
+        label='Registered Email:',
+        widget=forms.EmailInput(attrs={
+            'class': 'login-input',
+            'placeholder': 'email',
+            'autocomplete': 'email',
+            'autofocus': True,
+        }),
+    )
+    phone_number = forms.CharField(
+        label='Registered Phone Number:',
+        widget=forms.TextInput(attrs={
+            'class': 'login-input',
+            'placeholder': '+63 XXX XXX XXXX',
+            'autocomplete': 'tel',
+        }),
+    )
+    new_password1 = forms.CharField(
+        label='New Password:',
+        widget=forms.PasswordInput(attrs={
+            'class': 'login-input',
+            'placeholder': 'new password',
+            'autocomplete': 'new-password',
+        }),
+    )
+    new_password2 = forms.CharField(
+        label='Confirm New Password:',
+        widget=forms.PasswordInput(attrs={
+            'class': 'login-input',
+            'placeholder': 'confirm new password',
+            'autocomplete': 'new-password',
+        }),
+    )
+
+    user = None
+
+    def clean(self):
+        cleaned = super().clean()
+        email = (cleaned.get('email') or '').strip().lower()
+        phone = cleaned.get('phone_number') or ''
+        p1 = cleaned.get('new_password1')
+        p2 = cleaned.get('new_password2')
+
+        if p1 and p2 and p1 != p2:
+            self.add_error('new_password2', "The two passwords don't match.")
+
+        if email and phone:
+            user = User.objects.filter(email__iexact=email).first()
+            norm_input = normalize_phone(phone)
+            if user is None or not norm_input or normalize_phone(user.phone_number) != norm_input:
+                raise ValidationError('No account matched that email and phone number.')
+            self.user = user
+
+        if p1 and self.user:
+            try:
+                password_validation.validate_password(p1)
+            except ValidationError as error:
+                self.add_error('new_password1', error)
+
+        return cleaned
+
+    def save(self):
+        self.user.set_password(self.cleaned_data['new_password1'])
+        self.user.save(update_fields=['password_hash', 'updated_at'])
+        return self.user

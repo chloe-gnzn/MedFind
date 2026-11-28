@@ -1,61 +1,128 @@
-{% extends 'base.html' %}
+{% extends 'user_base.html' %}
 {% block title %}{{ pharmacy.business_name }}{% endblock %}
-{% block content %}
-<div class="panel">
-    <div class="row-between">
-        <div>
-            <h1 class="page-title">{{ pharmacy.business_name }} <span class="badge approved">Verified</span></h1>
-            <p class="page-sub" style="margin-bottom:0">{{ pharmacy.address }} · {{ pharmacy.contact_number }}</p>
-        </div>
-        <form method="post" action="{% url 'toggle_favorite' 'pharmacy' pharmacy.pharmacy_id %}" class="inline">
+
+{% block top_bar %}
+<div class="sr-top">
+    <div class="sr-heading">
+        <h1 class="sr-title">{{ pharmacy.business_name }}</h1>
+        <p class="sr-sub">{{ pharmacy.address }}{% if pharmacy.contact_number %} · {{ pharmacy.contact_number }}{% endif %}</p>
+    </div>
+
+    <div class="actions">
+        <span class="badge approved">Verified</span>
+        {% if open_now is None %}<span class="sr-badge unset">Hours not set</span>
+        {% elif open_now %}<span class="sr-badge in">Open now</span>
+        {% else %}<span class="sr-badge out">Closed right now</span>{% endif %}
+
+        <form method="post" action="{% url 'toggle_favorite' 'pharmacy' pharmacy.pharmacy_id %}" class="inline fav-ajax-form">
             {% csrf_token %}
-            <input type="hidden" name="next" value="{{ request.path }}">
-            <button type="submit" class="btn {% if is_favorite %}danger{% else %}secondary{% endif %}">
-                {% if is_favorite %}♥ Remove favorite{% else %}♡ Add to favorites{% endif %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="btn {% if is_favorite %}danger{% else %}{% endif %}">
+                {% if is_favorite %}♥ Remove Favorite{% else %}♡ Add to Favorites{% endif %}
             </button>
         </form>
     </div>
-    <p>
-        {% if open_now is None %}<span class="muted">Opening hours not set.</span>
-        {% elif open_now %}<span class="badge green">Open now</span>
-        {% else %}<span class="badge red">Closed right now</span>{% endif %}
-    </p>
 </div>
+{% endblock %}
 
-<div class="panel">
-    <h2>Opening hours</h2>
-    <table class="data hours-table">
-        {% for row in hour_rows %}
-        <tr>
-            <td>{{ row.label }}</td>
-            <td>
-                {% if not row.hours %}<span class="muted">Not set</span>
-                {% elif row.hours.is_closed %}Closed
-                {% else %}{{ row.hours.opening_time|time:"g:i A" }} – {{ row.hours.closing_time|time:"g:i A" }}{% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-</div>
+{% block content %}
+<div class="up-pharmacy-grid">
+    <section class="sr-card">
+        <h2 class="sr-card-title" style="font-size:22px">Opening hours</h2>
+        <table class="data hours-table">
+            {% for row in hour_rows %}
+            <tr>
+                <td>{{ row.label }}</td>
+                <td>
+                    {% if not row.hours %}<span class="muted">Not set</span>
+                    {% elif row.hours.is_closed %}<span style="color:var(--hm-terracotta);font-weight:700">Closed</span>
+                    {% else %}{{ row.hours.opening_time|time:"g:i A" }} – {{ row.hours.closing_time|time:"g:i A" }}{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </section>
 
-<div class="panel">
-    <h2>Medicines available here</h2>
-    {% if items %}
-    <div class="table-wrap">
-    <table class="data">
-        <tr><th>Medicine</th><th>Price</th><th>Availability</th></tr>
-        {% for i in items %}
-        <tr>
-            <td><a class="title" href="{% url 'medicine_detail' i.medicine.medicine_id %}">{{ i.medicine.medicine_name }}</a>
-                <div class="muted">{{ i.medicine.generic_name }} · {{ i.medicine.strength }} {{ i.medicine.form }}</div></td>
-            <td>₱{{ i.price|floatformat:2 }}</td>
-            <td><span class="badge {{ i.availability_status }}">{{ i.get_availability_status_display }}</span></td>
-        </tr>
-        {% endfor %}
-    </table>
-    </div>
-    {% else %}
-        <div class="empty">This pharmacy hasn't listed any medicines yet.</div>
-    {% endif %}
+    <section class="sr-card">
+        <div class="up-card-head">
+            <h2 class="sr-card-title" style="font-size:22px">Medicines available here ({{ items|length }})</h2>
+        </div>
+
+        <form class="up-filter-form" method="get" action="{% url 'pharmacy_detail' pharmacy.pharmacy_id %}" style="margin-bottom:18px">
+            <input class="home-search-input" type="text" name="q" value="{{ q }}"
+                   placeholder="Filter medicines in this pharmacy..." aria-label="Filter medicines in this pharmacy"
+                   style="max-width:260px">
+
+            {% if categories %}
+            <select class="up-select" name="category" aria-label="Filter by category" onchange="this.form.submit()">
+                <option value="">All categories</option>
+                {% for c in categories %}
+                <option value="{{ c.category_id }}" {% if category_id == c.category_id|stringformat:'s' %}selected{% endif %}>{{ c.category_name }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+
+            <select class="up-select" name="status" aria-label="Filter by stock status" onchange="this.form.submit()">
+                <option value="">All stock statuses</option>
+                <option value="in_stock" {% if status == 'in_stock' %}selected{% endif %}>In stock (Available / Low)</option>
+                <option value="available" {% if status == 'available' %}selected{% endif %}>Available only</option>
+                <option value="low_stock" {% if status == 'low_stock' %}selected{% endif %}>Low stock</option>
+                <option value="out_of_stock" {% if status == 'out_of_stock' %}selected{% endif %}>Out of stock</option>
+            </select>
+
+            <button type="submit" class="btn small">Filter</button>
+            {% if q or category_id or status %}
+            <a class="btn secondary small" href="{% url 'pharmacy_detail' pharmacy.pharmacy_id %}">Reset</a>
+            {% endif %}
+        </form>
+
+        {% if items %}
+        <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th>Price</th>
+                    <th>Availability</th>
+                    <th>Stock</th>
+                    <th>Updated</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for i in items %}
+                <tr>
+                    <td>
+                        <a class="title" href="{% url 'medicine_detail' i.medicine.medicine_id %}">{{ i.medicine.medicine_name }}</a>
+                        <div class="muted">{{ i.medicine.generic_name }} · {{ i.medicine.strength }} {{ i.medicine.form }} · {{ i.medicine.category.category_name }}</div>
+                    </td>
+                    <td class="price-cell">₱{{ i.price|floatformat:2 }}</td>
+                    <td><span class="badge {{ i.availability_status }}">{{ i.get_availability_status_display }}</span></td>
+                    <td class="muted">{{ i.stock_quantity }}</td>
+                    <td class="muted">{{ i.updated_at|date:"M d, Y" }}</td>
+                    <td>
+                        <form class="inline fav-ajax-form" method="post" action="{% url 'toggle_favorite' 'medicine' i.medicine.medicine_id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit"
+                                    class="fav-icon-btn {% if i.medicine.medicine_id in fav_medicine_ids %}active{% endif %}"
+                                    title="{% if i.medicine.medicine_id in fav_medicine_ids %}Remove favorite{% else %}Add to favorites{% endif %}"
+                                    aria-label="Toggle favorite for {{ i.medicine.medicine_name }}">
+                                {% if i.medicine.medicine_id in fav_medicine_ids %}♥{% else %}♡{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <div class="sr-empty">
+                <strong>No medicines found</strong>
+                <span>{% if q or category_id or status %}Try clearing your filters.{% else %}This pharmacy hasn't listed any medicines yet.{% endif %}</span>
+            </div>
+        {% endif %}
+    </section>
 </div>
 {% endblock %}

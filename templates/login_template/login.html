@@ -36,7 +36,7 @@
                 {% csrf_token %}
 
                 <div class="login-field">
-                    <label class="login-label" for="{{ form.email.id_for_label }}">Enter Email/Phone No.:</label>
+                    <label class="login-label" for="{{ form.email.id_for_label }}">{% if role == 'user' %}Enter Email/Phone No.:{% else %}Enter Email:{% endif %}</label>
                     {{ form.email }}
                     {% if form.email.errors %}
                         <ul class="login-errors">
@@ -53,8 +53,9 @@
                             {% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}
                         </ul>
                     {% endif %}
-                    {# TODO: point this at your password-reset URL once it exists #}
-                    <a class="login-forgot" href="#">Forgot Password?</a>
+                    {% if role == 'user' %}
+                    <a class="login-forgot" href="{% url 'forgot_password' %}">Forgot Password?</a>
+                    {% endif %}
                 </div>
 
                 {% if form.non_field_errors %}

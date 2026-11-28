@@ -1,0 +1,133 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MedFind | {% block title %}{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@600&family=Alexandria:wght@300;400;700&family=Lalezar&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/search.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_theme.css' %}">
+    {% block head %}{% endblock %}
+</head>
+<body class="home-page user-page {% block body_class %}{% endblock %}">
+
+    {# ===== Top navigation bar ===== #}
+    <header class="home-nav">
+        <a class="home-logo" href="{% url 'home' %}" aria-label="MedFind+">MedFind<span class="plus">+</span></a>
+
+        {% with page=request.resolver_match.url_name %}
+        <nav class="home-nav-links" aria-label="Main">
+            <a href="{% url 'home' %}" {% if page == 'home' %}class="active" aria-current="page"{% endif %}>Home</a>
+            <a href="{% url 'search' %}" {% if page == 'search' %}class="active" aria-current="page"{% endif %}>Search</a>
+            <a href="{% url 'favorites' %}" {% if page == 'favorites' %}class="active" aria-current="page"{% endif %}>Favorites</a>
+            <a href="{% url 'history' %}" {% if page == 'history' %}class="active" aria-current="page"{% endif %}>History</a>
+        </nav>
+        {% endwith %}
+
+        {# Profile button (menu: My Profile, Log Out) #}
+        <details class="home-profile">
+            <summary aria-label="Account menu">
+                <span class="mask-icon home-profile-icon" aria-hidden="true"></span>
+            </summary>
+            <nav class="home-profile-menu">
+                <a href="{% url 'user_profile' %}">My Profile</a>
+                <a href="{% url 'logout' %}" class="logout">Log Out</a>
+            </nav>
+        </details>
+    </header>
+
+    <div class="up-toast-stack" id="up-toast-stack" aria-live="polite" aria-atomic="true">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="up-toast {{ message.tags }}" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="home-shell">
+
+        {% block top_bar %}{% endblock %}
+
+        {# Rectangle 1: raised outer shell  /  Rectangle 2: recessed inner panel #}
+        <main class="home-panel">
+            <div class="home-panel-inner">
+                <div class="home-scroll {% block scroll_class %}up-scroll{% endblock %}">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+    (function () {
+        const stack = document.getElementById('up-toast-stack');
+
+        function scheduleRemoval(toast) {
+            setTimeout(() => {
+                toast.classList.add('is-leaving');
+                setTimeout(() => toast.remove(), 260);
+            }, 3000);
+        }
+
+        function showToast(message, kind) {
+            if (!stack || !message) return;
+            const toast = document.createElement('div');
+            toast.className = 'up-toast ' + (kind || 'info');
+            toast.setAttribute('role', 'status');
+            toast.textContent = message;
+            stack.appendChild(toast);
+            scheduleRemoval(toast);
+        }
+
+        if (stack) {
+            stack.querySelectorAll('.up-toast').forEach(scheduleRemoval);
+        }
+
+        document.addEventListener('submit', async function (event) {
+            const form = event.target.closest('form.fav-ajax-form');
+            if (!form) return;
+            event.preventDefault();
+
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                });
+                if (!res.ok) {
+                    form.submit();
+                    return;
+                }
+                const data = await res.json();
+                if (btn) {
+                    const isIconOnly = btn.classList.contains('fav-icon-btn');
+                    btn.classList.toggle('active', Boolean(data.favorited));
+                    if (isIconOnly) {
+                        btn.textContent = data.favorited ? '♥' : '♡';
+                        btn.title = data.favorited ? 'Remove favorite' : 'Add to favorites';
+                    } else {
+                        btn.classList.toggle('danger', Boolean(data.favorited));
+                        btn.textContent = data.favorited ? '♥ Remove Favorite' : '♡ Add to Favorites';
+                    }
+                }
+                showToast(data.message, data.favorited ? 'success' : 'info');
+            } catch (err) {
+                form.submit();
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        });
+    })();
+    </script>
+
+</body>
+</html>

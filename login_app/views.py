@@ -6,7 +6,7 @@ from medfind_project.session_auth import (
     get_account, login_account, logout_account,
 )
 
-from .forms import LoginForm
+from .forms import ForgotPasswordForm, LoginForm
 from .utils import log_activity
 
 LOGIN_PAGES = {
@@ -60,6 +60,24 @@ def pharmacy_login_view(request):
 def admin_login_view(request):
     """Admins  ->  /manage/login/"""
     return _login(request, 'admin')
+
+
+def forgot_password_view(request):
+    """Allow a user to reset their password after verifying email and phone number."""
+    if get_account(request):
+        return redirect(ROLE_HOME[request.session[SESSION_ROLE]])
+
+    if request.method == 'POST':
+        form = ForgotPasswordForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            log_activity('user', user.pk, 'password_reset', f'User {user.email} reset password.')
+            messages.success(request, 'Password updated! You can now log in with your new password.')
+            return redirect('login')
+    else:
+        form = ForgotPasswordForm()
+
+    return render(request, 'login_template/forgot_password.html', {'form': form})
 
 
 def logout_view(request):
