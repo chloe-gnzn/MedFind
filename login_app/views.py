@@ -26,7 +26,6 @@ LOGIN_PAGES = {
 
 
 def _login(request, role, template='login_template/login.html'):
-    # already logged in -> straight to that account's own home screen
     if get_account(request):
         return redirect(ROLE_HOME[request.session[SESSION_ROLE]])
 

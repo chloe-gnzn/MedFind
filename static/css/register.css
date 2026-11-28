@@ -7,7 +7,6 @@
 
 .register-page .login-logo { margin-top: 20px; }
 
-/* form */
 .register-page .login-form {
   max-width: 284px;
   margin-top: 16px;
@@ -26,7 +25,6 @@
   height: 34px;
   padding: 0 16px;
   border-radius: 12px;
-  /* softer inset to suit the shorter field */
   box-shadow:
     5px 5px 9px rgba(184, 190, 204, 0.45) inset,
     -5px -5px 9px rgba(255, 255, 255, 0.95) inset;
@@ -45,7 +43,6 @@
   color: var(--lg-muted);
 }
 
-/* ---------- "Sign Up" button: 169 Ã— 38, 20px text ---------- */
 .register-page .login-submit-row { margin-top: 20px; }
 .register-page .login-btn {
   width: 169px;
@@ -54,7 +51,6 @@
   border-radius: 40px;
 }
 
-/* ---------- Divider + link ---------- */
 .register-page .login-divider {
   margin-top: 16px;
   max-width: 284px;
@@ -63,7 +59,6 @@
 .register-page .login-divider::after { flex-basis: 36px; }
 .register-page .login-register { margin-top: 6px; }
 
-/* ---------- Doctor: a touch larger than on Login, flush to the bottom ---------- */
 .register-page .login-doctor {
   height: 556px;
   bottom: -90px;
@@ -82,6 +77,5 @@
   .register-page .login-divider::after { flex-basis: 20px; }
 }
 
-/* line error messages up with the label text */
 .register-page .login-errors { margin-left: 10px; }
 .register-page .login-errors.general { margin-left: 0; }

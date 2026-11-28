@@ -15,7 +15,6 @@
 </head>
 <body class="home-page pharmacy-page admin-page">
 
-    {# ===== Top navigation bar ===== #}
     <header class="home-nav">
         <a class="home-logo" href="{% url 'admin_dashboard' %}" aria-label="MedFind+">MedFind<span class="plus">+</span></a>
 
@@ -36,7 +35,6 @@
         </nav>
         {% endwith %}
 
-        {# Profile button (menu: My Profile, Log Out) #}
         <details class="home-profile">
             <summary aria-label="Account menu">
                 <span class="mask-icon home-profile-icon" aria-hidden="true"></span>
@@ -58,16 +56,13 @@
 
     <div class="home-shell">
 
-        {# ===== Page title (left) + optional action button (right) ===== #}
         <div class="pp-top">
             <div class="pp-heading">{% block page_header %}{% endblock %}</div>
             <div class="pp-actions">{% block page_actions %}{% endblock %}</div>
         </div>
 
-        {# Rectangle 1: raised outer shell  /  Rectangle 2: recessed inner panel #}
         <main class="home-panel">
           <div class="home-panel-inner">
-            {# Only this area scrolls #}
             <div class="home-scroll pp-scroll">
                 {% block content %}{% endblock %}
             </div>

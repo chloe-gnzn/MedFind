@@ -30,7 +30,6 @@
 {% endblock %}
 
 {% block content %}
-{# ---- Category filter chips ---- #}
 {% if categories %}
 <nav class="sr-chips" aria-label="Filter medicines by category">
     <a class="sr-chip {% if not category_id %}active{% endif %}"
@@ -46,7 +45,6 @@
 <p class="up-cat-note"><strong>{{ selected_category.category_name }}:</strong> {{ selected_category.description }}</p>
 {% endif %}
 
-{# ---- Additional filters & sorting ---- #}
 <form class="up-filter-form" method="get" action="{% url browse_url_name|default:'search' %}">
     {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
     {% if category_id %}<input type="hidden" name="category" value="{{ category_id }}">{% endif %}
@@ -80,7 +78,6 @@
     {% endif %}
 </form>
 
-{# ================= Medicines ================= #}
 <section class="sr-card {% if medicines|length > 3 %}is-collapsed{% endif %}" id="sr-med-card" aria-labelledby="sr-med-h">
     <div class="up-card-head">
         <h2 class="sr-card-title" id="sr-med-h">Medicines ({{ medicines|length }})</h2>
@@ -144,7 +141,6 @@
     {% endif %}
 </section>
 
-{# ================= Pharmacies ================= #}
 <section class="sr-card {% if pharmacies|length > 3 %}is-collapsed{% endif %}" id="sr-ph-card" aria-labelledby="sr-ph-h">
     <div class="up-card-head">
         <h2 class="sr-card-title" id="sr-ph-h">Pharmacies ({{ pharmacies|length }})</h2>

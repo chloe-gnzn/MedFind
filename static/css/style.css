@@ -156,7 +156,6 @@ input:focus {
   border: 1px solid #c3dbf3;
 }
 
-/* Home screen */
 .home-wrapper {
   text-align: center;
 }
@@ -189,9 +188,6 @@ input:focus {
   background: #fdecea;
 }
 
-/* ================================================================
-   App layout (logged-in pages: user / pharmacy / admin)
-   ================================================================ */
 select.form-input,
 textarea.form-input,
 input[type="number"],

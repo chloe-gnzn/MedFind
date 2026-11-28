@@ -1,4 +1,3 @@
-
 .pp-top {
   flex: 0 0 auto;
   display: flex;
@@ -8,7 +7,7 @@
   flex-wrap: wrap;
 }
 .pp-heading { min-width: 0; }
-.pp-top .home-welcome { white-space: normal; }          /* long pharmacy names may wrap */
+.pp-top .home-welcome { white-space: normal; }
 
 .pp-title {
   margin: 0;
@@ -29,7 +28,6 @@
 .pp-actions { display: flex; gap: 12px; align-items: center; }
 .pp-actions:empty { display: none; }
 
-/* ---------- Scroll area: a stack of cards ---------- */
 .pp-scroll {
   display: flex;
   flex-direction: column;
@@ -40,7 +38,6 @@
   flex: 0 0 auto;
 }
 
-/* ---------- Cards (raised, like the Search result cards) ---------- */
 .pharmacy-page .panel {
   padding: 24px 28px 28px;
   background: var(--hm-surface);
@@ -59,7 +56,6 @@
   color: var(--hm-navy);
 }
 
-/* ---------- Dashboard stat tiles ---------- */
 .pharmacy-page .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -87,7 +83,6 @@
 }
 .pharmacy-page .stat .lbl { margin-top: 2px; font-size: 13px; font-weight: 300; color: #5B6798; }
 
-/* ---------- Status banners (recessed note) ---------- */
 .pharmacy-page .banner {
   padding: 14px 20px;
   font-size: 13px;
@@ -100,7 +95,7 @@
     4px 4px 8px rgba(184, 190, 204, 0.45) inset,
     -4px -4px 8px rgba(255, 255, 255, 0.95) inset;
 }
-.pharmacy-page .banner::before {          /* status dot, inline so the sentence flows normally */
+.pharmacy-page .banner::before {
   content: "";
   display: inline-block;
   width: 9px;
@@ -115,7 +110,6 @@
 .pharmacy-page .banner.rejected { color: #B04E43; }
 .pharmacy-page .banner a { color: var(--hm-accent); font-weight: 700; }
 
-/* ---------- Buttons (the navy pill used across Home / Search) ---------- */
 .pharmacy-page .btn {
   display: inline-flex;
   align-items: center;
@@ -141,7 +135,6 @@
 .pharmacy-page .btn:focus-visible { outline: 2px solid var(--hm-accent); outline-offset: 3px; }
 .pharmacy-page .btn.small { min-height: 28px; padding: 0 16px; }
 
-/* secondary / danger: soft raised pills */
 .pharmacy-page .btn.secondary,
 .pharmacy-page .btn.danger {
   color: var(--hm-navy);
@@ -158,7 +151,6 @@
 .pharmacy-page .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .pharmacy-page form.inline { display: inline; margin: 0; }
 
-/* ---------- Tables ---------- */
 .pharmacy-page table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
 .pharmacy-page table.data th {
   padding: 0 12px 12px;
@@ -183,11 +175,9 @@
 .pharmacy-page .muted { font-size: 12px; font-weight: 300; color: #5B6798; }
 .pharmacy-page table.data td.muted { white-space: nowrap; }
 
-/* operating-hours table */
 .pharmacy-page .hours-table td { padding: 10px 12px; }
 .pharmacy-page .hours-table input[type="checkbox"] { width: 18px; height: 18px; accent-color: #172B51; cursor: pointer; }
 
-/* ---------- Status badges ---------- */
 .pharmacy-page .badge {
   display: inline-flex;
   align-items: center;
@@ -207,7 +197,6 @@
 .pharmacy-page .badge.low_stock, .pharmacy-page .badge.pending  { color: #9A6A00; }
 .pharmacy-page .badge.out_of_stock, .pharmacy-page .badge.rejected { color: #B04E43; }
 
-/* ---------- Empty state (recessed) ---------- */
 .pharmacy-page .empty {
   padding: 34px 16px;
   text-align: center;
@@ -222,7 +211,6 @@
     -4px -4px 8px rgba(255, 255, 255, 0.95) inset;
 }
 
-/* ---------- Forms (neumorphic inset fields, same recipe as Search) ---------- */
 .pharmacy-page .form-group { margin-bottom: 18px; }
 .pharmacy-page .form-group label {
   display: block;
@@ -353,7 +341,6 @@
   color: #B04E43;
 }
 
-/* ---------- Two-column forms & filter chips ---------- */
 .pp-two-col {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -407,7 +394,6 @@
   box-shadow: 4px 4px 7px rgba(0, 0, 0, 0.25);
 }
 
-/* ---------- Inventory filter toolbar & inline quick-edit ---------- */
 .pp-filter-bar {
   display: flex;
   flex-wrap: wrap;
@@ -493,7 +479,6 @@
   pointer-events: none;
 }
 
-/* ---------- Neumorphic confirmation modal ---------- */
 .pp-modal {
   position: fixed;
   inset: 0;
@@ -536,7 +521,6 @@
   color: #5B6798;
 }
 
-/* ---------- Pharmacy storefront photo preview ---------- */
 .pp-photo-preview {
   width: 100%;
   max-width: 300px;
@@ -581,7 +565,6 @@
   display: block;
 }
 
-/* ---------- Responsive ---------- */
 @media (max-width: 960px) {
   .pp-two-col { grid-template-columns: 1fr; }
 }

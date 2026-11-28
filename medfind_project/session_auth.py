@@ -8,21 +8,18 @@ from django.shortcuts import redirect
 SESSION_ROLE = 'account_role'
 SESSION_ID = 'account_id'
 
-# where each role lands after logging in (URL names)
 ROLE_HOME = {
     'user': 'home',
     'pharmacy': 'pharmacy_dashboard',
     'admin': 'admin_dashboard',
 }
 
-# each role has its OWN login page (URL names)
 ROLE_LOGIN = {
-    'user': 'login',                 # /
-    'pharmacy': 'pharmacy_login',    # /pharmacy-portal/login/
-    'admin': 'admin_login',          # /manage/login/
+    'user': 'login',
+    'pharmacy': 'pharmacy_login',
+    'admin': 'admin_login',
 }
 
-# role -> (app_label, model_name)
 ROLE_MODELS = {
     'user': ('home_app', 'User'),
     'pharmacy': ('pharmacy_app', 'Pharmacy'),
@@ -79,11 +76,9 @@ def role_required(role):
             account = get_account(request)
             if account is None:
                 messages.info(request, 'Please log in to continue.')
-                # send them to the login page that belongs to the area they tried to open
                 return redirect(ROLE_LOGIN[role])
             current_role = request.session.get(SESSION_ROLE)
             if current_role != role:
-                # logged in, but as a different kind of account -> back to their own area
                 return redirect(ROLE_HOME[current_role])
             request.account = account
             return view(request, *args, **kwargs)

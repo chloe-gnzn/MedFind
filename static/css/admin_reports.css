@@ -1,12 +1,7 @@
-/* MedFind | admin Inventory + Reports screens
-   Extra bits on top of style.css (same palette, same components). */
-
-/* filter bar */
 .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .filter-bar .form-input { width: auto; min-width: 160px; }
 .filter-bar input[type="text"] { flex: 1; min-width: 220px; }
 
-/* status / view chips: active state */
 .chip.active { background: #1f9d6b; color: #fff; }
 .chip.active .count { color: #d9f3e7; }
 .chip.red    { background: #fdecea; color: #b93225; }
@@ -19,7 +14,6 @@
 .num.red   { color: #c0392b; }
 .num.amber { color: #b7791f; }
 
-/* "how it works" note */
 .note {
   background: #f3faf6; border: 1px solid #d3efe1; border-radius: 10px;
   padding: 12px 16px; font-size: 13px; color: #33473f; line-height: 1.55; margin-bottom: 18px;
@@ -27,7 +21,6 @@
 .note code, .sql-box code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .note code { background: #e5f7ee; padding: 1px 6px; border-radius: 5px; font-size: 12px; }
 
-/* generated SQL box (for the demo video) */
 details.sql { margin-top: 4px; }
 details.sql summary { cursor: pointer; font-size: 13px; font-weight: 600; color: #1f9d6b; padding: 4px 0; }
 .sql-box {
@@ -36,7 +29,6 @@ details.sql summary { cursor: pointer; font-size: 13px; font-weight: 600; color:
   white-space: pre-wrap; word-break: break-word;
 }
 
-/* pagination */
 .pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
 .pager .btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
 

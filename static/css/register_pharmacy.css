@@ -1,10 +1,3 @@
-/* ==========================================================================
-   MedFind | Pharmacy registration
-   Loaded AFTER login.css (card, logo, inputs, button, divider, errors).
-   Same look as the user Register screen, but wider so the six fields
-   sit in a two-column grid instead of one very tall column.
-   ========================================================================== */
-
 .pharmacy-register-page .login-card { max-width: 640px; }
 
 .pharmacy-register-page .login-card-inner {
@@ -14,7 +7,6 @@
 
 .pharmacy-register-page .login-logo { margin-top: 20px; }
 
-/* ---------- Form grid ---------- */
 .pharmacy-register-page .pr-form {
   max-width: 100%;
   margin-top: 18px;
@@ -26,11 +18,10 @@
   gap: 14px 22px;
   align-items: start;
 }
-/* Name and address are long, so they take the full row */
 .pr-business_name,
 .pr-address { grid-column: 1 / -1; }
 
-.pharmacy-register-page .login-field + .login-field { margin-top: 0; }  /* grid gap handles spacing */
+.pharmacy-register-page .login-field + .login-field { margin-top: 0; }
 
 .pharmacy-register-page .login-label {
   margin-bottom: 6px;
@@ -39,7 +30,6 @@
   line-height: 1.4;
 }
 
-/* Same shorter inset field as the user Register screen */
 .pharmacy-register-page .login-input {
   height: 38px;
   padding: 0 16px;
@@ -63,11 +53,9 @@
   color: var(--lg-muted);
 }
 
-/* line error messages up with the label text */
 .pharmacy-register-page .login-errors { margin-left: 10px; }
 .pharmacy-register-page .login-errors.general { margin-left: 0; }
 
-/* ---------- Verification note (small recessed callout) ---------- */
 .pr-note {
   margin: 20px 0 0;
   padding: 10px 16px;
@@ -83,7 +71,6 @@
     -4px -4px 8px rgba(255, 255, 255, 0.95) inset;
 }
 
-/* ---------- Sign Up button (same size as the user Register screen) ---------- */
 .pharmacy-register-page .login-submit-row { margin-top: 20px; }
 .pharmacy-register-page .login-btn {
   width: 169px;
@@ -92,14 +79,12 @@
   border-radius: 40px;
 }
 
-/* ---------- Divider + links ---------- */
 .pharmacy-register-page .login-divider { margin-top: 18px; max-width: 284px; }
 .pharmacy-register-page .login-divider::before,
 .pharmacy-register-page .login-divider::after { flex-basis: 36px; }
 .pharmacy-register-page .login-register { margin-top: 6px; }
 .pharmacy-register-page .login-other { margin-top: 10px; max-width: none; }
 
-/* ---------- Responsive ---------- */
 @media (max-width: 640px) {
   .pr-grid { grid-template-columns: 1fr; gap: 12px; }
   .pr-business_name,

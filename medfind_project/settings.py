@@ -12,10 +12,8 @@ SECRET_KEY = config('DJANGO_SECRET_KEY', default='django-insecure-change-this-ke
 
 DEBUG = config('DJANGO_DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['*']  
+ALLOWED_HOSTS = ['*']
 
-
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,13 +23,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # MedFind apps — one Django app per area of the system
-    'landing_app',    # public landing page (no models)
-    'login_app',      # login screen (no models)
-    'register_app',   # registration screens + seed/admin commands (no models)
-    'home_app',       # user home/search + User, Medicine_Category, Medicine, Favorite, Search_history
-    'pharmacy_app',   # pharmacy portal + Pharmacy, Inventory, Operating_hours, Pharmacy_verification
-    'admin_app',      # admin portal + Admin, Activity_Log
+    'landing_app',
+    'login_app',
+    'register_app',
+    'home_app',
+    'pharmacy_app',
+    'admin_app',
 ]
 
 MIDDLEWARE = [
@@ -49,8 +46,8 @@ ROOT_URLCONF = 'medfind_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # project-level templates (optional)
-        'APP_DIRS': True,  # lets Django find accounts/templates/... automatically
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -65,8 +62,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'medfind_project.wsgi.application'
 
-
-# Database
 
 DATABASES = {
     'default': {
@@ -94,8 +89,6 @@ if config('DJANGO_USE_SQLITE', default=False, cast=bool):
 }
 
 
-# Password validation
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -104,15 +97,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Manila'
 USE_I18N = True
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
@@ -120,11 +109,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# --- Uploaded files (pharmacy verification documents) ---
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# --- Auth ---
 # MedFind does not use django.contrib.auth.User for its accounts. Users,
 # pharmacies and admins live in their own ERD tables and log in through
 # medfind_project/session_auth.py. (django.contrib.auth is still installed

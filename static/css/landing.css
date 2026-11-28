@@ -29,7 +29,6 @@ a { text-decoration: none; color: inherit; }
 section[id], .lp-anchor { scroll-margin-top: 90px; }
 .lp-anchor { display: flow-root; }
 
-/* navbar */
 .lp-nav {
     position: sticky; top: 0; z-index: 50;
     display: flex; align-items: center; gap: 24px;
@@ -70,7 +69,6 @@ section[id], .lp-anchor { scroll-margin-top: 90px; }
 
 .lp-page { max-width: 1180px; margin: 0 auto; }
 
-/* hero */
 .lp-hero {
     position: relative; overflow: hidden;
     margin: 16px 24px 0;
@@ -167,7 +165,6 @@ section[id], .lp-anchor { scroll-margin-top: 90px; }
     filter: brightness(1.04);
 }
 
-/* about */
 .lp-sheet {
     position: relative; z-index: 5;
     margin-top: 16px;
@@ -206,7 +203,6 @@ section[id], .lp-anchor { scroll-margin-top: 90px; }
     font-size: clamp(14px, 1.35vw, 17px); line-height: 1.5; color: var(--body-text);
 }
 
-/* features */
 .lp-features {
     position: relative; overflow: hidden;
     margin: clamp(32px, 4.5vw, 56px) 24px 0;
@@ -236,7 +232,7 @@ section[id], .lp-anchor { scroll-margin-top: 90px; }
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .lp-card {
-    position: relative; overflow: hidden;       /* clips the big masked icon to the card */
+    position: relative; overflow: hidden;
     min-height: 245px;
     padding: 32px 22px 24px;
     display: flex; flex-direction: column; justify-content: flex-end;
@@ -255,8 +251,6 @@ section[id], .lp-anchor { scroll-margin-top: 90px; }
     font-size: clamp(13px, 1.25vw, 16px); line-height: 1.35;
 }
 
-/* The masking trick from Figma: the icon PNG is used as a MASK, and the
-   lighter tint colour is what shows through it, clipped by the card edge. */
 .lp-icon {
     position: absolute; z-index: 0;
     left: var(--ix); top: var(--iy); width: var(--iw); height: var(--ih);
@@ -285,7 +279,6 @@ section[id], .lp-anchor { scroll-margin-top: 90px; }
     --ix:-46%;   --iy:-47%;  --iw:200%; --ih:195%;
 }
 
-/* ------------------------------------------------ how it works */
 .lp-how {
     margin: clamp(26px, 4vw, 48px) 24px 0;
     padding: clamp(24px, 3vw, 34px) clamp(22px, 3.5vw, 40px) clamp(28px, 3.5vw, 40px);
@@ -330,7 +323,6 @@ section[id], .lp-anchor { scroll-margin-top: 90px; }
     font-size: 14px; line-height: 1.45; color: var(--body-text);
 }
 
-/* ------------------------------------------------ footer */
 .lp-footer {
     margin-top: clamp(40px, 6vw, 76px);
     background: var(--footer-bg);
@@ -361,7 +353,6 @@ section[id], .lp-anchor { scroll-margin-top: 90px; }
     font-family: 'Inter', var(--sans); font-size: 14px; color: var(--navy);
 }
 
-/* ------------------------------------------------ responsive */
 @media (max-width: 1000px) {
     .lp-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .lp-steps { grid-template-columns: 1fr; }

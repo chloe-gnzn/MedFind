@@ -77,8 +77,6 @@ def dashboard_view(request):
     })
 
 
-# ------------------------------------------------------------ Admin profile
-
 @role_required('admin')
 def profile_view(request):
     admin = request.account
@@ -109,8 +107,6 @@ def profile_view(request):
         'reviewed_count': admin.reviewed_verifications.count(),
     })
 
-
-# ------------------------------------------------------- Admin management
 
 @role_required('admin')
 @super_admin_required
@@ -178,8 +174,6 @@ def admin_delete_view(request, admin_id):
     messages.info(request, f'Deleted admin account {email}.')
     return redirect('admin_admins')
 
-
-# ------------------------------------------------------------ Verifications
 
 @role_required('admin')
 def verifications_view(request):
@@ -254,8 +248,6 @@ def verification_review_view(request, verification_id):
 
     return render(request, 'admin_template/verification_review.html', {'v': verification})
 
-
-# ---------------------------------------------------------- Pharmacies/users
 
 @role_required('admin')
 def pharmacies_view(request):
@@ -356,8 +348,6 @@ def users_view(request):
     })
 
 
-# --------------------------------------------------------------- Categories
-
 @role_required('admin')
 def categories_view(request):
     q = request.GET.get('q', '').strip()
@@ -402,8 +392,6 @@ def category_delete_view(request, category_id):
     return render(request, 'admin_template/confirm_delete.html', {
         'what': f'category "{category.category_name}"', 'back_url': 'admin_categories'})
 
-
-# ---------------------------------------------------------------- Medicines
 
 @role_required('admin')
 def medicines_view(request):
@@ -460,8 +448,6 @@ def medicine_delete_view(request, medicine_id):
         'back_url': 'admin_medicines'})
 
 
-# ------------------------------------------------- Inventory monitoring (JOIN)
-
 @role_required('admin')
 def inventory_monitor_view(request):
     """
@@ -474,7 +460,6 @@ def inventory_monitor_view(request):
     pharmacy_id = request.GET.get('pharmacy', '')
     category_id = request.GET.get('category', '')
 
-    # ---- the JOIN -------------------------------------------------------
     rows = (Inventory.objects
             .select_related('pharmacy', 'medicine', 'medicine__category')
             .only('price', 'availability_status', 'stock_quantity', 'updated_at',
@@ -483,7 +468,6 @@ def inventory_monitor_view(request):
                   'medicine__strength', 'medicine__form',
                   'medicine__category__category_name')
             .order_by('pharmacy__business_name', 'medicine__medicine_name'))
-    # ---------------------------------------------------------------------
 
     if q:
         rows = rows.filter(
@@ -528,8 +512,6 @@ def inventory_monitor_view(request):
         'sql': _pretty_sql(rows),
     })
 
-
-# ---------------------------------------------------- Stock report (SUBQUERY)
 
 def _available_medicine_ids():
     return (Inventory.objects
@@ -581,8 +563,6 @@ def stock_report_view(request):
         'sql': _pretty_sql(medicines),
     })
 
-
-# ------------------------------------------------------------- Activity log
 
 def _with_actor_names(logs):
     """Attach a readable `actor_name` to each log row (actor_id has no FK)."""

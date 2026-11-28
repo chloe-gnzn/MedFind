@@ -12,10 +12,6 @@
 </head>
 <body class="login-page">
 
-    <!--
-    <img class="login-bg" src="{% static 'login_register/pharmacy.png' %}" alt="" aria-hidden="true"
-         onerror="this.style.display='none'">
-        -->
     <main class="login-card">
         <div class="login-card-inner">
 
@@ -65,10 +61,6 @@
             <div class="login-divider">{{ page.register_text }}</div>
             <p class="login-register"><a href="{% url page.register_url %}">{{ page.register_label }}</a></p>
             {% endif %}
-
-            <!--{% if page.other_url %}
-            <p class="login-other">{{ page.other_text }} <a href="{% url page.other_url %}">{{ page.other_label }}</a></p>
-            {% endif %}-->
 
         </div>
     </main>

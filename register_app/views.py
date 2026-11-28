@@ -18,7 +18,7 @@ def register_view(request):
             user = form.save()
             log_activity('user', user.pk, 'register', f'User {user.email} registered.')
             messages.success(request, 'Account created successfully! You can now log in.')
-            return redirect('login')  # Transition back to Login Screen
+            return redirect('login')
         messages.error(request, 'Please fix the errors below and try again.')
     else:
         form = UserRegisterForm()

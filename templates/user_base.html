@@ -15,7 +15,6 @@
 </head>
 <body class="home-page user-page {% block body_class %}{% endblock %}">
 
-    {# ===== Top navigation bar ===== #}
     <header class="home-nav">
         <a class="home-logo" href="{% url 'home' %}" aria-label="MedFind+">MedFind<span class="plus">+</span></a>
 
@@ -29,7 +28,6 @@
         </nav>
         {% endwith %}
 
-        {# Profile button (menu: My Profile, Log Out) #}
         <details class="home-profile">
             <summary aria-label="Account menu">
                 <span class="mask-icon home-profile-icon" aria-hidden="true"></span>
@@ -53,7 +51,6 @@
 
         {% block top_bar %}{% endblock %}
 
-        {# Rectangle 1: raised outer shell  /  Rectangle 2: recessed inner panel #}
         <main class="home-panel">
             <div class="home-panel-inner">
                 <div class="home-scroll {% block scroll_class %}up-scroll{% endblock %}">

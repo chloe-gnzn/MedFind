@@ -97,8 +97,6 @@ def dashboard_view(request):
     return render(request, 'pharmacy_template/dashboard.html', context)
 
 
-# Inventory
-
 @role_required('pharmacy')
 def inventory_list_view(request):
     q = request.GET.get('q', '').strip()
@@ -245,8 +243,6 @@ def inventory_delete_view(request, inventory_id):
     return redirect('pharmacy_inventory')
 
 
-# Operating hours
-
 def _hours_rows(pharmacy):
     existing = {h.days_of_week: h for h in OperatingHours.objects.filter(pharmacy=pharmacy)}
     rows = []
@@ -306,8 +302,6 @@ def hours_view(request):
 
     return render(request, 'pharmacy_template/hours.html', {'rows': rows})
 
-
-# Verification
 
 @role_required('pharmacy')
 def verification_view(request):
@@ -376,8 +370,6 @@ def verification_cancel_view(request, verification_id):
     return redirect('pharmacy_verification')
 
 
-# Reservations
-
 @role_required('pharmacy')
 def reservations_view(request):
     pharmacy = request.account
@@ -436,8 +428,6 @@ def reservation_resolve_view(request, reservation_id):
         messages.info(request, f'Reservation {res.reservation_code} moved to Unclaimed and stock restored.')
     return redirect('pharmacy_reservations')
 
-
-# Profile & Activity
 
 ACTIVITY_GROUPS = {
     'inventory': ('inventory_add', 'inventory_update', 'inventory_remove'),

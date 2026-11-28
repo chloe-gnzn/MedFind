@@ -254,7 +254,6 @@ class UserPortalTests(TestCase):
             'kind': 'medicine',
         })
 
-        # Confirm the next page load does not show a leftover banner inside the panel
         home_res = self.client.get(reverse('home'))
         self.assertNotContains(home_res, 'Added Biogesic to your favorites.')
         self.assertNotContains(home_res, 'Removed Biogesic from your favorites.')
@@ -264,7 +263,6 @@ class UserPortalTests(TestCase):
         s2 = SearchHistory.objects.create(user=self.user, search_term='Losartan')
         other_search = SearchHistory.objects.create(user=self.other_user, search_term='Secret')
 
-        # Cannot delete another user's search item
         res_other = self.client.post(reverse('delete_history_item', args=[other_search.search_id]))
         self.assertEqual(res_other.status_code, 404)
 
@@ -330,7 +328,6 @@ class UserPortalTests(TestCase):
         self.assertContains(pharm_res, 'Log in to Favorite')
         self.assertNotContains(pharm_res, '/home/favorites/toggle/')
 
-        # Guests are still blocked from toggling favorites directly
         fav_attempt = self.client.post(
             reverse('toggle_favorite', args=['medicine', self.med_biogesic.pk])
         )
@@ -352,7 +349,6 @@ class UserPortalTests(TestCase):
         inv = Inventory.objects.get(pharmacy=self.pharm_open, medicine=self.med_biogesic)
         initial_stock = inv.stock_quantity
 
-        # Valid reservation deducts stock and generates RS0001-style code
         res = self.client.post(
             reverse('reserve_medicine', args=[inv.pk]),
             {'quantity': 5, 'next': reverse('medicine_detail', args=[self.med_biogesic.pk])},
@@ -367,12 +363,10 @@ class UserPortalTests(TestCase):
         inv.refresh_from_db()
         self.assertEqual(inv.stock_quantity, initial_stock - 5)
 
-        # User can view pending reservation on My Reservations page
         list_res = self.client.get(reverse('user_reservations'), {'folder': 'pending'})
         self.assertContains(list_res, reservation.reservation_code)
         self.assertContains(list_res, self.med_biogesic.medicine_name)
 
-        # Exceeding remaining stock is rejected without creating a reservation
         over_res = self.client.post(
             reverse('reserve_medicine', args=[inv.pk]),
             {'quantity': inv.stock_quantity + 1},
@@ -381,7 +375,6 @@ class UserPortalTests(TestCase):
         self.assertEqual(over_res.status_code, 200)
         self.assertEqual(Reservation.objects.count(), 1)
 
-        # Reserving zero or out-of-stock medicine is rejected
         zero_res = self.client.post(reverse('reserve_medicine', args=[inv.pk]), {'quantity': 0})
         self.assertEqual(zero_res.status_code, 302)
         oos_inv = Inventory.objects.get(pharmacy=self.pharm_open, medicine=self.med_vitc)
@@ -389,7 +382,6 @@ class UserPortalTests(TestCase):
         self.assertEqual(oos_res.status_code, 302)
         self.assertEqual(Reservation.objects.count(), 1)
 
-        # Expired pending reservation auto-moves to Unclaimed and restores stock
         Reservation.objects.filter(pk=reservation.pk).update(
             expires_at=timezone.now() - timedelta(hours=1)
         )

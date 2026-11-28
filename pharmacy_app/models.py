@@ -17,27 +17,27 @@ class Pharmacy(PasswordMixin, models.Model):
     VERIFICATION_PENDING = 'pending'
     VERIFICATION_APPROVED = 'approved'
     VERIFICATION_REJECTED = 'rejected'
-    VERIFICATION_CHOICES = [                                          # enum
+    VERIFICATION_CHOICES = [
         (VERIFICATION_PENDING, 'Pending'),
         (VERIFICATION_APPROVED, 'Approved'),
         (VERIFICATION_REJECTED, 'Rejected'),
     ]
 
-    pharmacy_id = models.AutoField(primary_key=True)                  # PK  int
-    email = models.EmailField(max_length=254, unique=True)            # UK  varchar
-    business_name = models.CharField(max_length=255)                  # varchar
-    password_hash = models.CharField(max_length=255)                  # varchar
-    contact_number = models.CharField(max_length=20)                  # varchar
-    address = models.CharField(max_length=255)                        # varchar
+    pharmacy_id = models.AutoField(primary_key=True)
+    email = models.EmailField(max_length=254, unique=True)
+    business_name = models.CharField(max_length=255)
+    password_hash = models.CharField(max_length=255)
+    contact_number = models.CharField(max_length=20)
+    address = models.CharField(max_length=255)
     photo = models.FileField(upload_to='pharmacy_photos/', blank=True)
-    verification_status = models.CharField(                           # enum
+    verification_status = models.CharField(
         max_length=20,
         choices=VERIFICATION_CHOICES,
         default=VERIFICATION_PENDING,
     )
-    is_active = models.BooleanField(default=True)                     # boolean
-    created_at = models.DateTimeField(auto_now_add=True)              # datetime
-    updated_at = models.DateTimeField(auto_now=True)                  # datetime
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = 'pharmacies'
@@ -61,29 +61,29 @@ class Inventory(models.Model):
     STATUS_AVAILABLE = 'available'
     STATUS_LOW = 'low_stock'
     STATUS_OUT = 'out_of_stock'
-    AVAILABILITY_CHOICES = [                                          # enum
+    AVAILABILITY_CHOICES = [
         (STATUS_AVAILABLE, 'Available'),
         (STATUS_LOW, 'Low stock'),
         (STATUS_OUT, 'Out of stock'),
     ]
 
-    inventory_id = models.AutoField(primary_key=True)                 # PK  int
-    pharmacy = models.ForeignKey(                                     # FK  int
+    inventory_id = models.AutoField(primary_key=True)
+    pharmacy = models.ForeignKey(
         'pharmacy_app.Pharmacy', on_delete=models.CASCADE, related_name='inventory_items'
     )
-    medicine = models.ForeignKey(                                     # FK  int
+    medicine = models.ForeignKey(
         'home_app.Medicine', on_delete=models.CASCADE, related_name='inventory_items'
     )
-    price = models.DecimalField(                                      # decimal
+    price = models.DecimalField(
         max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
     )
-    availability_status = models.CharField(                           # enum
+    availability_status = models.CharField(
         max_length=20, choices=AVAILABILITY_CHOICES, default=STATUS_AVAILABLE
     )
-    stock_quantity = models.IntegerField(                             # int
+    stock_quantity = models.IntegerField(
         default=0, validators=[MinValueValidator(0)]
     )
-    updated_at = models.DateTimeField(auto_now=True)                  # datetime
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = 'inventory'
@@ -100,20 +100,20 @@ class Inventory(models.Model):
 class OperatingHours(models.Model):
     """ERD: Operating_hours  (one pharmacy -> up to 7 rows, one per weekday)"""
 
-    DAY_CHOICES = [                                                   # tinyint 0-6
+    DAY_CHOICES = [
         (0, 'Monday'), (1, 'Tuesday'), (2, 'Wednesday'), (3, 'Thursday'),
         (4, 'Friday'), (5, 'Saturday'), (6, 'Sunday'),
     ]
 
-    hours_id = models.AutoField(primary_key=True)                     # PK  int
-    pharmacy = models.ForeignKey(                                     # FK  int
+    hours_id = models.AutoField(primary_key=True)
+    pharmacy = models.ForeignKey(
         'pharmacy_app.Pharmacy', on_delete=models.CASCADE, related_name='operating_hours'
     )
-    days_of_week = models.PositiveSmallIntegerField(choices=DAY_CHOICES)   # tinyint
+    days_of_week = models.PositiveSmallIntegerField(choices=DAY_CHOICES)
     # times are blank on days the pharmacy is closed
-    opening_time = models.TimeField(null=True, blank=True)            # time
-    closing_time = models.TimeField(null=True, blank=True)            # time
-    is_closed = models.BooleanField(default=False)                    # boolean
+    opening_time = models.TimeField(null=True, blank=True)
+    closing_time = models.TimeField(null=True, blank=True)
+    is_closed = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = 'operating hours'
@@ -134,26 +134,26 @@ class PharmacyVerification(models.Model):
     STATUS_PENDING = 'pending'
     STATUS_APPROVED = 'approved'
     STATUS_REJECTED = 'rejected'
-    STATUS_CHOICES = [                                                # enum
+    STATUS_CHOICES = [
         (STATUS_PENDING, 'Pending'),
         (STATUS_APPROVED, 'Approved'),
         (STATUS_REJECTED, 'Rejected'),
     ]
 
-    verification_id = models.AutoField(primary_key=True)              # PK  int
-    pharmacy = models.ForeignKey(                                     # FK  int
+    verification_id = models.AutoField(primary_key=True)
+    pharmacy = models.ForeignKey(
         'pharmacy_app.Pharmacy', on_delete=models.CASCADE, related_name='verifications'
     )
-    reviewed_by = models.ForeignKey(                                  # FK  int  -> Admin (empty until reviewed)
+    reviewed_by = models.ForeignKey(
         'admin_app.Admin', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='reviewed_verifications',
     )
-    document_path = models.CharField(max_length=255)                  # varchar
-    status = models.CharField(                                        # enum
+    document_path = models.CharField(max_length=255)
+    status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING
     )
-    reviewed_at = models.DateTimeField(null=True, blank=True)         # datetime
-    remarks = models.TextField(blank=True)                            # text
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    remarks = models.TextField(blank=True)
 
     class Meta:
         ordering = ['-verification_id']

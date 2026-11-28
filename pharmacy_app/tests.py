@@ -83,7 +83,6 @@ class PharmacyMissingScreensTests(TestCase):
         self.assertContains(res_get, 'Business Details')
         self.assertContains(res_get, 'Change Password')
 
-        # Reject duplicate email belonging to another pharmacy
         res_dup = self.client.post(reverse('pharmacy_profile'), {
             'action': 'update_profile',
             'business_name': 'CarePlus Pharmacy',
@@ -193,7 +192,6 @@ class PharmacyMissingScreensTests(TestCase):
             pharmacy=self.pharmacy, medicine=m2, price='8.00', availability_status='available', stock_quantity=50
         )
 
-        # Form validation checks stock_quantity vs availability_status
         bad_zero = InventoryForm(
             data={'medicine': m1.pk, 'price': '10.00', 'stock_quantity': 0, 'availability_status': 'available'}
         )
@@ -220,7 +218,6 @@ class PharmacyMissingScreensTests(TestCase):
         self.assertContains(res_filter, 'Amoxicillin')
         self.assertNotContains(res_filter, 'Ascorbic')
 
-        # Quick update to 0 stock auto-sets out_of_stock
         res_quick = self.client.post(reverse('inventory_quick_update', args=[inv1.pk]), {
             'price': '13.50',
             'stock_quantity': '0',
@@ -294,7 +291,6 @@ class PharmacyMissingScreensTests(TestCase):
                     'password': 'PharmPass123!',
                 })
 
-                # Reject non-image files
                 bad_file = SimpleUploadedFile('notes.txt', b'not an image', content_type='text/plain')
                 res_bad = self.client.post(reverse('pharmacy_profile'), {
                     'action': 'update_profile',
@@ -307,7 +303,6 @@ class PharmacyMissingScreensTests(TestCase):
                 self.assertEqual(res_bad.status_code, 200)
                 self.assertContains(res_bad, 'Please upload a JPG, PNG, or WebP image.')
 
-                # Upload valid PNG image
                 img_file = SimpleUploadedFile('storefront.png', b'\x89PNG\r\n\x1a\nfake', content_type='image/png')
                 res_ok = self.client.post(reverse('pharmacy_profile'), {
                     'action': 'update_profile',
@@ -322,11 +317,9 @@ class PharmacyMissingScreensTests(TestCase):
                 self.assertTrue(bool(self.pharmacy.photo))
                 photo_url = self.pharmacy.photo.url
 
-                # Visible on Pharmacy Dashboard
                 dash_res = self.client.get(reverse('pharmacy_dashboard'))
                 self.assertContains(dash_res, photo_url)
 
-                # Visible on User End (Home, Search, Pharmacy Detail)
                 self.client.get(reverse('pharmacy_logout'))
                 user = User(
                     first_name='Pat',
@@ -345,7 +338,6 @@ class PharmacyMissingScreensTests(TestCase):
                     photo_url,
                 )
 
-                # Remove photo from Pharmacy Profile
                 self.client.get(reverse('logout'))
                 self.client.post(reverse('pharmacy_login'), {
                     'email': 'care@pharmacy.com',
@@ -389,7 +381,6 @@ class PharmacyMissingScreensTests(TestCase):
             availability_status='available',
         )
 
-        # Create three reservations totaling 20 units -> stock becomes 0 (out_of_stock)
         r1 = create_reservation(customer, inv.pk, 5)
         r2 = create_reservation(customer, inv.pk, 8)
         r3 = create_reservation(customer, inv.pk, 7)
@@ -398,14 +389,12 @@ class PharmacyMissingScreensTests(TestCase):
         self.assertEqual(inv.stock_quantity, 0)
         self.assertEqual(inv.availability_status, 'out_of_stock')
 
-        # Pending folder renders reservation IDs, medicine names, and only Claimed / Not claimed buttons
         pending_page = self.client.get(reverse('pharmacy_reservations'), {'folder': 'pending'})
         self.assertEqual(pending_page.status_code, 200)
         self.assertContains(pending_page, r1.reservation_code)
         self.assertContains(pending_page, 'Claimed')
         self.assertContains(pending_page, 'Not claimed')
 
-        # Mark r1 as Claimed -> moves to Claimed folder, stock stays deducted
         res_claim = self.client.post(
             reverse('pharmacy_reservation_resolve', args=[r1.pk]),
             {'decision': 'claimed'},
@@ -416,7 +405,6 @@ class PharmacyMissingScreensTests(TestCase):
         claimed_page = self.client.get(reverse('pharmacy_reservations'), {'folder': 'claimed'})
         self.assertContains(claimed_page, r1.reservation_code)
 
-        # Mark r2 as Not claimed -> moves to Unclaimed folder and restores 8 units
         self.client.post(
             reverse('pharmacy_reservation_resolve', args=[r2.pk]),
             {'decision': 'unclaimed'},
@@ -428,7 +416,6 @@ class PharmacyMissingScreensTests(TestCase):
         self.assertEqual(inv.stock_quantity, 8)
         self.assertEqual(inv.availability_status, 'low_stock')
 
-        # Expire r3 past 24 hours -> auto-moves to Unclaimed folder and restores remaining 7 units
         Reservation.objects.filter(pk=r3.pk).update(
             expires_at=timezone.now() - timedelta(minutes=5)
         )
@@ -456,14 +443,12 @@ class PharmacyMissingScreensTests(TestCase):
             strength='120mg/5mL',
         )
 
-        # GET Add page uses type-ahead input + empty hidden menu (no pre-populated <select name="medicine">)
         get_res = self.client.get(reverse('inventory_add'))
         self.assertEqual(get_res.status_code, 200)
         self.assertNotContains(get_res, '<select name="medicine"')
         self.assertContains(get_res, 'id="id_medicine_query"')
         self.assertContains(get_res, 'id="pp-med-menu" role="listbox" hidden')
 
-        # Typing an existing catalog medicine name links it to inventory
         post_existing = self.client.post(reverse('inventory_add'), {
             'medicine_query': 'Tempra',
             'price': '110.00',
@@ -475,7 +460,6 @@ class PharmacyMissingScreensTests(TestCase):
             Inventory.objects.filter(pharmacy=self.pharmacy, medicine=existing_med).exists()
         )
 
-        # Duplicate typed medicine in the same pharmacy is rejected cleanly
         post_dup = self.client.post(reverse('inventory_add'), {
             'medicine_query': 'Tempra',
             'price': '110.00',
@@ -485,7 +469,6 @@ class PharmacyMissingScreensTests(TestCase):
         self.assertEqual(post_dup.status_code, 200)
         self.assertContains(post_dup, 'is already in your inventory.')
 
-        # Typing a brand-new medicine normalizes casing/spacing, adds to catalog, and avoids duplicates
         post_new = self.client.post(reverse('inventory_add'), {
             'medicine_query': '  bioflu  ',
             'new_category': str(cat.pk),
@@ -504,7 +487,6 @@ class PharmacyMissingScreensTests(TestCase):
             Inventory.objects.filter(pharmacy=self.pharmacy, medicine=created_med, stock_quantity=40).exists()
         )
 
-        # A second pharmacy typing BIOFLU (with differing case/spacing) reuses the same Medicine row cleanly
         self.client.get(reverse('pharmacy_logout'))
         self.client.post(reverse('pharmacy_login'), {
             'email': 'other@pharmacy.com',
@@ -524,6 +506,5 @@ class PharmacyMissingScreensTests(TestCase):
             Inventory.objects.filter(pharmacy=self.other_pharmacy, medicine=created_med, stock_quantity=15).exists()
         )
 
-        # Browsing sees the combined availability across all pharmacies without duplicate Medicine cards
         browse_res = self.client.get(reverse('public_browse'), {'q': 'Bioflu'})
         self.assertContains(browse_res, 'In stock at 2 pharmacies')

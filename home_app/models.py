@@ -10,14 +10,14 @@ from medfind_project.session_auth import PasswordMixin
 class User(PasswordMixin, models.Model):
     """ERD: User"""
 
-    user_id = models.AutoField(primary_key=True)                      # PK  int
-    first_name = models.CharField(max_length=100)                     # varchar
-    last_name = models.CharField(max_length=100)                      # varchar
-    email = models.EmailField(max_length=254, unique=True)            # varchar (unique so it can be the login id)
-    password_hash = models.CharField(max_length=255)                  # varchar
-    phone_number = models.CharField(max_length=20)                    # varchar
-    created_at = models.DateTimeField(auto_now_add=True)              # datetime
-    updated_at = models.DateTimeField(auto_now=True)                  # datetime
+    user_id = models.AutoField(primary_key=True)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=254, unique=True)
+    password_hash = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -37,9 +37,9 @@ class User(PasswordMixin, models.Model):
 class MedicineCategory(models.Model):
     """ERD: Medicine_Category"""
 
-    category_id = models.AutoField(primary_key=True)                  
-    description = models.CharField(max_length=255, blank=True)        
-    category_name = models.TextField(unique=True)                     
+    category_id = models.AutoField(primary_key=True)
+    description = models.CharField(max_length=255, blank=True)
+    category_name = models.TextField(unique=True)
 
     class Meta:
         verbose_name_plural = 'medicine categories'
@@ -52,18 +52,18 @@ class MedicineCategory(models.Model):
 class Medicine(models.Model):
     """ERD: Medicine  (one category -> many medicines)"""
 
-    medicine_id = models.AutoField(primary_key=True)                  
-    category = models.ForeignKey(                                     
+    medicine_id = models.AutoField(primary_key=True)
+    category = models.ForeignKey(
         MedicineCategory,
         on_delete=models.PROTECT,
         related_name='medicines',
     )
-    medicine_name = models.CharField(max_length=255)                  
-    generic_name = models.CharField(max_length=255)                   
-    form = models.CharField(max_length=100)                           
-    strength = models.CharField(max_length=100)                       
-    description = models.TextField(blank=True)                        
-    created_at = models.DateTimeField(auto_now_add=True)              
+    medicine_name = models.CharField(max_length=255)
+    generic_name = models.CharField(max_length=255)
+    form = models.CharField(max_length=100)
+    strength = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['medicine_name']
@@ -82,25 +82,25 @@ class Favorite(models.Model):
 
     TYPE_MEDICINE = 'medicine'
     TYPE_PHARMACY = 'pharmacy'
-    TYPE_CHOICES = [                                                  
+    TYPE_CHOICES = [
         (TYPE_MEDICINE, 'Medicine'),
         (TYPE_PHARMACY, 'Pharmacy'),
     ]
 
-    favorite_id = models.AutoField(primary_key=True)                  
-    user = models.ForeignKey(                                         
+    favorite_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(
         'home_app.User', on_delete=models.CASCADE, related_name='favorites'
     )
-    medicine = models.ForeignKey(                                     
+    medicine = models.ForeignKey(
         Medicine, on_delete=models.CASCADE, related_name='favorites',
         null=True, blank=True,
     )
-    pharmacy = models.ForeignKey(                                     
+    pharmacy = models.ForeignKey(
         'pharmacy_app.Pharmacy', on_delete=models.CASCADE, related_name='favorites',
         null=True, blank=True,
     )
-    favorite_type = models.CharField(max_length=20, choices=TYPE_CHOICES)   
-    created_at = models.DateTimeField(auto_now_add=True)              
+    favorite_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -119,12 +119,12 @@ class Favorite(models.Model):
 class SearchHistory(models.Model):
     """ERD: Search_history  (one user -> many searches)"""
 
-    search_id = models.AutoField(primary_key=True)                    
-    user = models.ForeignKey(                                         
+    search_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(
         'home_app.User', on_delete=models.CASCADE, related_name='search_history'
     )
-    search_term = models.CharField(max_length=255)                    
-    searched_at = models.DateTimeField(auto_now_add=True)             
+    search_term = models.CharField(max_length=255)
+    searched_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name_plural = 'search history'

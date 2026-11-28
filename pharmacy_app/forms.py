@@ -87,7 +87,6 @@ class InventoryForm(forms.ModelForm):
         self.pharmacy = pharmacy
         self._new_medicine_attrs = None
         if self.instance.pk:
-            # editing: the medicine can't be swapped, only its price/stock
             self.fields['medicine'].disabled = True
             for extra in (
                 'medicine_query',

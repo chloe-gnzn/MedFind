@@ -98,12 +98,10 @@ class AdminPortalTests(TestCase):
         self.assertTrue(self.regular_admin.check_password('NewAdminPass456!'))
 
     def test_super_admin_only_can_manage_admins(self):
-        # Regular admin is blocked
         self._login_as(self.regular_admin)
         res_blocked = self.client.get(reverse('admin_admins'))
         self.assertRedirects(res_blocked, reverse('admin_dashboard'))
 
-        # Super admin can list, create, toggle role, and delete
         self._login_as(self.super_admin)
         res_list = self.client.get(reverse('admin_admins'))
         self.assertEqual(res_list.status_code, 200)

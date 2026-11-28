@@ -19,7 +19,6 @@ class CategoryForm(StyledModelForm):
         model = MedicineCategory
         fields = ['category_name', 'description']
         widgets = {
-            # category_name is a text column in the ERD; a one-line input is friendlier
             'category_name': forms.TextInput(attrs={'placeholder': 'e.g. Pain relievers'}),
             'description': forms.TextInput(attrs={'placeholder': 'Short description'}),
         }
