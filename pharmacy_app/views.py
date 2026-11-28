@@ -18,8 +18,8 @@ from medfind_project.session_auth import ROLE_HOME, SESSION_ROLE, get_account, r
 from register_app.forms import PharmacyRegisterForm
 
 from .forms import InventoryForm, PharmacyProfileForm, VerificationUploadForm
-from .models import Inventory, OperatingHours, PharmacyVerification
-from .utils import format_hours_span, is_24_hours, open_now_map
+from .models import Inventory, OperatingHours, PharmacyVerification, Reservation
+from .utils import expire_stale_reservations, format_hours_span, is_24_hours, open_now_map, resolve_reservation
 
 INVENTORY_SORTS = {
     'name': 'medicine__medicine_name',
@@ -60,6 +60,7 @@ def pharmacy_register_view(request):
 @role_required('pharmacy')
 def dashboard_view(request):
     pharmacy = request.account
+    expire_stale_reservations(pharmacy=pharmacy)
     items = Inventory.objects.filter(pharmacy=pharmacy).select_related('medicine')
     low_items = items.filter(
         availability_status__in=[Inventory.STATUS_LOW, Inventory.STATUS_OUT]
@@ -84,6 +85,9 @@ def dashboard_view(request):
         'open_now': open_now_map([pharmacy.pk])[pharmacy.pk],
         'hours_text': hours_text,
         'favorite_count': pharmacy.favorites.count(),
+        'pending_reservations_count': Reservation.objects.filter(
+            pharmacy=pharmacy, status=Reservation.STATUS_PENDING
+        ).count(),
         'latest_verification': pharmacy.verifications.first(),
         'recent_logs': ActivityLog.objects.filter(
             actor_type=ActivityLog.ACTOR_PHARMACY,
@@ -350,10 +354,72 @@ def verification_cancel_view(request, verification_id):
     return redirect('pharmacy_verification')
 
 
+# Reservations
+
+@role_required('pharmacy')
+def reservations_view(request):
+    pharmacy = request.account
+    expire_stale_reservations(pharmacy=pharmacy)
+
+    folder = request.GET.get('folder', 'pending').strip()
+    q = request.GET.get('q', '').strip()
+
+    base = Reservation.objects.filter(pharmacy=pharmacy).select_related('user', 'medicine')
+    counts = {
+        'pending': base.filter(status=Reservation.STATUS_PENDING).count(),
+        'claimed': base.filter(status=Reservation.STATUS_CLAIMED).count(),
+        'unclaimed': base.filter(status=Reservation.STATUS_UNCLAIMED).count(),
+    }
+
+    if folder not in ('pending', 'claimed', 'unclaimed'):
+        folder = 'pending'
+    rows = base.filter(status=folder)
+    if q:
+        rows = rows.filter(
+            Q(reservation_code__icontains=q)
+            | Q(medicine__medicine_name__icontains=q)
+            | Q(medicine__generic_name__icontains=q)
+            | Q(user__first_name__icontains=q)
+            | Q(user__last_name__icontains=q)
+            | Q(user__email__icontains=q)
+        )
+
+    return render(request, 'pharmacy_template/reservations.html', {
+        'reservations': rows,
+        'folder': folder,
+        'q': q,
+        'counts': counts,
+    })
+
+
+@role_required('pharmacy')
+@require_POST
+def reservation_resolve_view(request, reservation_id):
+    decision = request.POST.get('decision', '').strip()
+    try:
+        res = resolve_reservation(request.account, reservation_id, decision)
+    except ValueError as err:
+        messages.error(request, str(err))
+        return redirect('pharmacy_reservations')
+
+    log_activity(
+        'pharmacy',
+        request.account.pk,
+        f'reservation_{decision}',
+        f'Marked reservation {res.reservation_code} ({res.quantity}x {res.medicine.medicine_name}) as {decision}.',
+    )
+    if decision == Reservation.STATUS_CLAIMED:
+        messages.success(request, f'Reservation {res.reservation_code} moved to Claimed.')
+    else:
+        messages.info(request, f'Reservation {res.reservation_code} moved to Unclaimed and stock restored.')
+    return redirect('pharmacy_reservations')
+
+
 # Profile & Activity
 
 ACTIVITY_GROUPS = {
     'inventory': ('inventory_add', 'inventory_update', 'inventory_remove'),
+    'reservations': ('reservation_claimed', 'reservation_unclaimed', 'reservation_expired'),
     'hours': ('hours_update',),
     'verification': ('verification_submit', 'verification_cancel'),
     'account': ('register', 'login', 'logout', 'profile_update', 'password_change', 'password_reset', 'photo_remove'),

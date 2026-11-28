@@ -1,5 +1,5 @@
 import tempfile
-from datetime import time
+from datetime import time, timedelta
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -10,8 +10,8 @@ from admin_app.models import ActivityLog
 from home_app.models import Favorite, Medicine, MedicineCategory, User
 
 from .forms import InventoryForm
-from .models import Inventory, OperatingHours, Pharmacy, PharmacyVerification
-from .utils import open_now_map
+from .models import Inventory, OperatingHours, Pharmacy, PharmacyVerification, Reservation
+from .utils import create_reservation, open_now_map
 
 
 class PharmacyMissingScreensTests(TestCase):
@@ -355,3 +355,89 @@ class PharmacyMissingScreensTests(TestCase):
                 self.assertRedirects(res_rem, reverse('pharmacy_profile'))
                 self.pharmacy.refresh_from_db()
                 self.assertFalse(bool(self.pharmacy.photo))
+
+    def test_pharmacy_reservation_claimed_unclaimed_and_24h_expiry_folders(self):
+        self.client.post(reverse('pharmacy_login'), {
+            'email': 'care@pharmacy.com',
+            'password': 'PharmPass123!',
+        })
+        customer = User(
+            first_name='Ana',
+            last_name='Reyes',
+            email='ana.reyes@example.com',
+            phone_number='09178889999',
+        )
+        customer.set_password('CustPass123!')
+        customer.save()
+
+        cat = MedicineCategory.objects.create(
+            category_name='Fever & Pain',
+            description='Analgesics',
+        )
+        med = Medicine.objects.create(
+            category=cat,
+            medicine_name='Biogesic',
+            generic_name='Paracetamol',
+            form='Tablet',
+            strength='500mg',
+        )
+        inv = Inventory.objects.create(
+            pharmacy=self.pharmacy,
+            medicine=med,
+            price='12.50',
+            stock_quantity=20,
+            availability_status='available',
+        )
+
+        # Create three reservations totaling 20 units -> stock becomes 0 (out_of_stock)
+        r1 = create_reservation(customer, inv.pk, 5)
+        r2 = create_reservation(customer, inv.pk, 8)
+        r3 = create_reservation(customer, inv.pk, 7)
+
+        inv.refresh_from_db()
+        self.assertEqual(inv.stock_quantity, 0)
+        self.assertEqual(inv.availability_status, 'out_of_stock')
+
+        # Pending folder renders reservation IDs, medicine names, and only Claimed / Not claimed buttons
+        pending_page = self.client.get(reverse('pharmacy_reservations'), {'folder': 'pending'})
+        self.assertEqual(pending_page.status_code, 200)
+        self.assertContains(pending_page, r1.reservation_code)
+        self.assertContains(pending_page, 'Claimed')
+        self.assertContains(pending_page, 'Not claimed')
+
+        # Mark r1 as Claimed -> moves to Claimed folder, stock stays deducted
+        res_claim = self.client.post(
+            reverse('pharmacy_reservation_resolve', args=[r1.pk]),
+            {'decision': 'claimed'},
+        )
+        self.assertRedirects(res_claim, reverse('pharmacy_reservations'))
+        r1.refresh_from_db()
+        self.assertEqual(r1.status, Reservation.STATUS_CLAIMED)
+        claimed_page = self.client.get(reverse('pharmacy_reservations'), {'folder': 'claimed'})
+        self.assertContains(claimed_page, r1.reservation_code)
+
+        # Mark r2 as Not claimed -> moves to Unclaimed folder and restores 8 units
+        self.client.post(
+            reverse('pharmacy_reservation_resolve', args=[r2.pk]),
+            {'decision': 'unclaimed'},
+        )
+        r2.refresh_from_db()
+        inv.refresh_from_db()
+        self.assertEqual(r2.status, Reservation.STATUS_UNCLAIMED)
+        self.assertFalse(r2.is_auto_expired)
+        self.assertEqual(inv.stock_quantity, 8)
+        self.assertEqual(inv.availability_status, 'low_stock')
+
+        # Expire r3 past 24 hours -> auto-moves to Unclaimed folder and restores remaining 7 units
+        Reservation.objects.filter(pk=r3.pk).update(
+            expires_at=timezone.now() - timedelta(minutes=5)
+        )
+        unclaimed_page = self.client.get(reverse('pharmacy_reservations'), {'folder': 'unclaimed'})
+        self.assertContains(unclaimed_page, r2.reservation_code)
+        self.assertContains(unclaimed_page, r3.reservation_code)
+        r3.refresh_from_db()
+        inv.refresh_from_db()
+        self.assertEqual(r3.status, Reservation.STATUS_UNCLAIMED)
+        self.assertTrue(r3.is_auto_expired)
+        self.assertEqual(inv.stock_quantity, 15)
+        self.assertEqual(inv.availability_status, 'available')

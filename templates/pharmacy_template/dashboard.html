@@ -47,6 +47,10 @@
         <div class="num">{{ low_count }}</div>
         <div class="lbl">Low / out of stock</div>
     </a>
+    <a class="stat" href="{% url 'pharmacy_reservations' %}">
+        <div class="num">{{ pending_reservations_count }}</div>
+        <div class="lbl">Pending reservations</div>
+    </a>
     <a class="stat" href="{% url 'pharmacy_hours' %}">
         <div class="num">{{ hours_set }}/7</div>
         <div class="lbl">Days with hours set</div>
@@ -61,6 +65,7 @@
     <h2>Quick actions</h2>
     <div class="actions">
         <a class="btn" href="{% url 'inventory_add' %}">+ Add medicine to inventory</a>
+        <a class="btn secondary" href="{% url 'pharmacy_reservations' %}">Reservations</a>
         <a class="btn secondary" href="{% url 'pharmacy_hours' %}">Set operating hours</a>
         <a class="btn secondary" href="{% url 'pharmacy_verification' %}">Verification</a>
         <a class="btn secondary" href="{% url 'pharmacy_profile' %}">{% if pharmacy.photo %}Pharmacy Profile{% else %}Add Storefront Photo{% endif %}</a>

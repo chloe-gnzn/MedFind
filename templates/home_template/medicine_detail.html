@@ -1,4 +1,4 @@
-{% extends 'user_base.html' %}
+{% extends base_template|default:'user_base.html' %}
 {% block title %}{{ medicine.medicine_name }}{% endblock %}
 
 {% block top_bar %}
@@ -9,7 +9,10 @@
     </div>
 
     <div class="actions">
-        <a href="{% url 'search' %}" class="btn secondary">← Back to search</a>
+        <a href="{% url browse_url_name|default:'search' %}" class="btn secondary">{% if is_guest %}← Back to browse{% else %}← Back to search{% endif %}</a>
+        {% if is_guest %}
+            <a href="{% url 'login' %}" class="btn">Log in to Favorite</a>
+        {% else %}
         <form method="post" action="{% url 'toggle_favorite' 'medicine' medicine.medicine_id %}" class="inline fav-ajax-form">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -17,6 +20,7 @@
                 {% if is_favorite %}♥ Remove Favorite{% else %}♡ Add to Favorites{% endif %}
             </button>
         </form>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -42,7 +46,7 @@
     <div class="up-card-head">
         <h2 class="sr-card-title">Where to find it</h2>
 
-        <form class="up-filter-form" method="get" action="{% url 'medicine_detail' medicine.medicine_id %}">
+        <form class="up-filter-form" method="get" action="{% url med_detail_url_name|default:'medicine_detail' medicine.medicine_id %}">
             <select class="up-select" name="sort" aria-label="Sort listings" onchange="this.form.submit()">
                 <option value="price" {% if sort == 'price' %}selected{% endif %}>Sort: Lowest Price</option>
                 <option value="stock" {% if sort == 'stock' %}selected{% endif %}>Sort: Highest Stock</option>
@@ -60,7 +64,7 @@
             </label>
 
             {% if in_stock_only or open_now_only or sort != 'price' %}
-            <a class="btn secondary small" href="{% url 'medicine_detail' medicine.medicine_id %}">Reset</a>
+            <a class="btn secondary small" href="{% url med_detail_url_name|default:'medicine_detail' medicine.medicine_id %}">Reset</a>
             {% endif %}
         </form>
     </div>
@@ -75,6 +79,7 @@
                 <th>Availability</th>
                 <th>Today</th>
                 <th>Updated</th>
+                <th>{% if not is_guest %}Reserve{% endif %}</th>
                 <th></th>
             </tr>
         </thead>
@@ -82,7 +87,7 @@
         {% for l in listings %}
             <tr>
                 <td>
-                    <a class="title" href="{% url 'pharmacy_detail' l.pharmacy.pharmacy_id %}">{{ l.pharmacy.business_name }}</a>
+                    <a class="title" href="{% url pharm_detail_url_name|default:'pharmacy_detail' l.pharmacy.pharmacy_id %}">{{ l.pharmacy.business_name }}</a>
                     <div class="muted">{{ l.pharmacy.address }}</div>
                     {% if l.pharmacy.contact_number %}<div class="muted">{{ l.pharmacy.contact_number }}</div>{% endif %}
                 </td>
@@ -103,7 +108,23 @@
                 </td>
                 <td class="muted">{{ l.updated_at|date:"M d, Y g:i A" }}</td>
                 <td>
+                    {% if not is_guest %}
+                        {% if l.stock_quantity > 0 and l.availability_status != 'out_of_stock' %}
+                        <form class="up-reserve-form" method="post" action="{% url 'reserve_medicine' l.inventory_id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <input class="up-qty-input" type="number" name="quantity" min="1" max="{{ l.stock_quantity }}" value="1"
+                                   aria-label="Quantity to reserve at {{ l.pharmacy.business_name }}">
+                            <button type="submit" class="btn small">Reserve</button>
+                        </form>
+                        {% else %}
+                            <span class="muted">Unavailable</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td>
                     <div class="actions">
+                        {% if not is_guest %}
                         <form class="inline fav-ajax-form" method="post" action="{% url 'toggle_favorite' 'pharmacy' l.pharmacy.pharmacy_id %}">
                             {% csrf_token %}
                             <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -114,7 +135,8 @@
                                 {% if l.is_pharmacy_favorite %}♥{% else %}♡{% endif %}
                             </button>
                         </form>
-                        <a class="sr-view" href="{% url 'pharmacy_detail' l.pharmacy.pharmacy_id %}">Visit</a>
+                        {% endif %}
+                        <a class="sr-view" href="{% url pharm_detail_url_name|default:'pharmacy_detail' l.pharmacy.pharmacy_id %}">Visit</a>
                     </div>
                 </td>
             </tr>

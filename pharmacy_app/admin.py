@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Inventory, OperatingHours, Pharmacy, PharmacyVerification
+from .models import Inventory, OperatingHours, Pharmacy, PharmacyVerification, Reservation
 
 
 @admin.register(Inventory)
@@ -29,3 +29,10 @@ class PharmacyAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False  # register through the app so passwords get hashed
+
+
+@admin.register(Reservation)
+class ReservationAdmin(admin.ModelAdmin):
+    list_display = ('reservation_code', 'user', 'pharmacy', 'medicine', 'quantity', 'status', 'expires_at')
+    list_filter = ('status', 'pharmacy')
+    search_fields = ('reservation_code', 'user__email', 'medicine__medicine_name', 'pharmacy__business_name')

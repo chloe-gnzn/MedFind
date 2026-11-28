@@ -10,6 +10,7 @@
 <nav class="pp-chips" aria-label="Filter pharmacy activity">
     <a class="pp-chip {% if group == 'all' %}active{% endif %}" href="{% url 'pharmacy_activity' %}">All</a>
     <a class="pp-chip {% if group == 'inventory' %}active{% endif %}" href="{% url 'pharmacy_activity' %}?group=inventory">Inventory</a>
+    <a class="pp-chip {% if group == 'reservations' %}active{% endif %}" href="{% url 'pharmacy_activity' %}?group=reservations">Reservations</a>
     <a class="pp-chip {% if group == 'hours' %}active{% endif %}" href="{% url 'pharmacy_activity' %}?group=hours">Operating Hours</a>
     <a class="pp-chip {% if group == 'verification' %}active{% endif %}" href="{% url 'pharmacy_activity' %}?group=verification">Verification</a>
     <a class="pp-chip {% if group == 'account' %}active{% endif %}" href="{% url 'pharmacy_activity' %}?group=account">Account</a>

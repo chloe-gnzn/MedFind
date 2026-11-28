@@ -1,16 +1,22 @@
-{% extends 'user_base.html' %}
-{% block title %}Search{% endblock %}
+{% extends base_template|default:'user_base.html' %}
+{% block title %}{% if is_guest %}Browse{% else %}Search{% endif %}{% endblock %}
 {% block body_class %}search-page{% endblock %}
 {% block scroll_class %}sr-scroll{% endblock %}
 
 {% block top_bar %}
 <div class="sr-top">
     <div class="sr-heading">
-        <h1 class="sr-title">Search</h1>
-        <p class="sr-sub">Look up a medicine by brand or generic name, compare prices, or find an open pharmacy.</p>
+        <h1 class="sr-title">{% if is_guest %}Browse{% else %}Search{% endif %}</h1>
+        <p class="sr-sub">
+            {% if is_guest %}
+                Explore medicines and verified pharmacies. <a href="{% url 'login' %}" style="color:var(--hm-navy);font-weight:600;text-decoration:underline;">Log in</a> to save favorites.
+            {% else %}
+                Look up a medicine by brand or generic name, compare prices, or find an open pharmacy.
+            {% endif %}
+        </p>
     </div>
 
-    <form class="sr-form" method="get" action="{% url 'search' %}" role="search">
+    <form class="sr-form" method="get" action="{% url browse_url_name|default:'search' %}" role="search">
         {% if category_id %}<input type="hidden" name="category" value="{{ category_id }}">{% endif %}
         {% if med_form %}<input type="hidden" name="form" value="{{ med_form }}">{% endif %}
         {% if in_stock_only %}<input type="hidden" name="in_stock" value="1">{% endif %}
@@ -28,10 +34,10 @@
 {% if categories %}
 <nav class="sr-chips" aria-label="Filter medicines by category">
     <a class="sr-chip {% if not category_id %}active{% endif %}"
-       href="{% url 'search' %}?{% if q %}q={{ q|urlencode }}&amp;{% endif %}{% if med_form %}form={{ med_form|urlencode }}&amp;{% endif %}{% if in_stock_only %}in_stock=1&amp;{% endif %}{% if open_now_only %}open_now=1&amp;{% endif %}{% if sort != 'name' %}sort={{ sort|urlencode }}{% endif %}">All</a>
+       href="{% url browse_url_name|default:'search' %}?{% if q %}q={{ q|urlencode }}&amp;{% endif %}{% if med_form %}form={{ med_form|urlencode }}&amp;{% endif %}{% if in_stock_only %}in_stock=1&amp;{% endif %}{% if open_now_only %}open_now=1&amp;{% endif %}{% if sort != 'name' %}sort={{ sort|urlencode }}{% endif %}">All</a>
     {% for c in categories %}
     <a class="sr-chip {% if category_id == c.category_id|stringformat:'s' %}active{% endif %}"
-       href="{% url 'search' %}?category={{ c.category_id }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}{% if med_form %}&amp;form={{ med_form|urlencode }}{% endif %}{% if in_stock_only %}&amp;in_stock=1{% endif %}{% if open_now_only %}&amp;open_now=1{% endif %}{% if sort != 'name' %}&amp;sort={{ sort|urlencode }}{% endif %}">{{ c.category_name }}</a>
+       href="{% url browse_url_name|default:'search' %}?category={{ c.category_id }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}{% if med_form %}&amp;form={{ med_form|urlencode }}{% endif %}{% if in_stock_only %}&amp;in_stock=1{% endif %}{% if open_now_only %}&amp;open_now=1{% endif %}{% if sort != 'name' %}&amp;sort={{ sort|urlencode }}{% endif %}">{{ c.category_name }}</a>
     {% endfor %}
 </nav>
 {% endif %}
@@ -41,7 +47,7 @@
 {% endif %}
 
 {# ---- Additional filters & sorting ---- #}
-<form class="up-filter-form" method="get" action="{% url 'search' %}">
+<form class="up-filter-form" method="get" action="{% url browse_url_name|default:'search' %}">
     {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
     {% if category_id %}<input type="hidden" name="category" value="{{ category_id }}">{% endif %}
 
@@ -70,7 +76,7 @@
     </label>
 
     {% if q or category_id or med_form or in_stock_only or open_now_only or sort != 'name' %}
-    <a class="btn secondary small" href="{% url 'search' %}">Reset</a>
+    <a class="btn secondary small" href="{% url browse_url_name|default:'search' %}">Reset</a>
     {% endif %}
 </form>
 
@@ -95,7 +101,7 @@
     {% for m in medicines %}
         <article class="sr-row">
             <div class="sr-row-main">
-                <a class="sr-row-title" href="{% url 'medicine_detail' m.medicine_id %}">{{ m.medicine_name }}</a>
+                <a class="sr-row-title" href="{% url med_detail_url_name|default:'medicine_detail' m.medicine_id %}">{{ m.medicine_name }}</a>
                 <p class="sr-row-meta">
                     {{ m.generic_name }}<span class="sr-dot">·</span>{{ m.strength }} {{ m.form }}<span class="sr-dot">·</span>{{ m.category.category_name }}
                 </p>
@@ -111,6 +117,7 @@
                 {% else %}
                     <span class="sr-badge out">Not in stock{% if open_now_only %} (open){% endif %}</span>
                 {% endif %}
+                {% if not is_guest %}
                 <form class="inline fav-ajax-form" method="post" action="{% url 'toggle_favorite' 'medicine' m.medicine_id %}">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -121,7 +128,8 @@
                         {% if m.medicine_id in fav_medicine_ids %}♥{% else %}♡{% endif %}
                     </button>
                 </form>
-                <a class="sr-view" href="{% url 'medicine_detail' m.medicine_id %}">View</a>
+                {% endif %}
+                <a class="sr-view" href="{% url med_detail_url_name|default:'medicine_detail' m.medicine_id %}">View</a>
             </div>
         </article>
     {% empty %}
@@ -174,7 +182,7 @@
                 </div>
                 {% endif %}
                 <div>
-                    <a class="sr-row-title" href="{% url 'pharmacy_detail' p.pharmacy_id %}">{{ p.business_name }}</a>
+                    <a class="sr-row-title" href="{% url pharm_detail_url_name|default:'pharmacy_detail' p.pharmacy_id %}">{{ p.business_name }}</a>
                     <p class="sr-row-meta sr-with-icon">
                         <span class="mask-icon ph-icon ph-icon-pin" aria-hidden="true"></span>
                         <span>
@@ -192,6 +200,7 @@
                 {% else %}
                     <span class="sr-badge out">Closed</span>
                 {% endif %}
+                {% if not is_guest %}
                 <form class="inline fav-ajax-form" method="post" action="{% url 'toggle_favorite' 'pharmacy' p.pharmacy_id %}">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -202,7 +211,8 @@
                         {% if p.pharmacy_id in fav_pharmacy_ids %}♥{% else %}♡{% endif %}
                     </button>
                 </form>
-                <a class="sr-view" href="{% url 'pharmacy_detail' p.pharmacy_id %}">Check Stocks</a>
+                {% endif %}
+                <a class="sr-view" href="{% url pharm_detail_url_name|default:'pharmacy_detail' p.pharmacy_id %}">Check Stocks</a>
             </div>
         </article>
     {% empty %}

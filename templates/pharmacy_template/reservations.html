@@ -1,0 +1,98 @@
+{% extends 'pharmacy_base.html' %}
+{% block title %}Reservations{% endblock %}
+
+{% block page_header %}
+<h1 class="pp-title">Medicine Reservations</h1>
+<p class="pp-sub">Reservations stay pending for 24 hours. Unclaimed reservations move automatically to the Unclaimed folder and restore stock.</p>
+{% endblock %}
+
+{% block content %}
+<nav class="pp-chips" aria-label="Reservation folders">
+    <a class="pp-chip {% if folder == 'pending' %}active{% endif %}" href="{% url 'pharmacy_reservations' %}?folder=pending{% if q %}&amp;q={{ q|urlencode }}{% endif %}">Pending ({{ counts.pending }})</a>
+    <a class="pp-chip {% if folder == 'claimed' %}active{% endif %}" href="{% url 'pharmacy_reservations' %}?folder=claimed{% if q %}&amp;q={{ q|urlencode }}{% endif %}">Claimed ({{ counts.claimed }})</a>
+    <a class="pp-chip {% if folder == 'unclaimed' %}active{% endif %}" href="{% url 'pharmacy_reservations' %}?folder=unclaimed{% if q %}&amp;q={{ q|urlencode }}{% endif %}">Unclaimed ({{ counts.unclaimed }})</a>
+</nav>
+
+<div class="panel">
+    <form class="pp-filter-bar" method="get" action="{% url 'pharmacy_reservations' %}">
+        <input type="hidden" name="folder" value="{{ folder }}">
+        <input class="form-input" type="text" name="q" value="{{ q }}"
+               placeholder="Search by ID (e.g. RS0001), medicine, or customer..." aria-label="Search reservations">
+        <button type="submit" class="btn small">Search</button>
+        {% if q %}
+        <a class="btn secondary small" href="{% url 'pharmacy_reservations' %}?folder={{ folder }}">Reset</a>
+        {% endif %}
+    </form>
+
+    {% if reservations %}
+    <div class="table-wrap">
+    <table class="data">
+        <thead>
+            <tr>
+                <th>Reservation ID</th>
+                <th>Medicine</th>
+                <th>Qty &amp; Total</th>
+                <th>Customer</th>
+                <th>{% if folder == 'pending' %}Reserved / Expires{% else %}Timeline{% endif %}</th>
+                <th>{% if folder == 'pending' %}Decision{% else %}Folder{% endif %}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in reservations %}
+            <tr>
+                <td><span class="pp-code-pill">{{ r.reservation_code }}</span></td>
+                <td>
+                    <strong>{{ r.medicine.medicine_name }}</strong>
+                    <div class="muted">{{ r.medicine.generic_name }} · {{ r.medicine.strength }} {{ r.medicine.form }}</div>
+                </td>
+                <td>
+                    <strong>{{ r.quantity }}</strong>
+                    <div class="muted">₱{{ r.total_price|floatformat:2 }}</div>
+                </td>
+                <td>
+                    <strong>{{ r.user.full_name }}</strong>
+                    <div class="muted">{{ r.user.phone_number }} · {{ r.user.email }}</div>
+                </td>
+                <td class="muted">
+                    <div>Reserved {{ r.created_at|date:"M d, g:i A" }}</div>
+                    {% if folder == 'pending' %}
+                        <div>Expires {{ r.expires_at|date:"M d, g:i A" }}</div>
+                    {% elif r.is_auto_expired %}
+                        <div>Expired (24h) {{ r.resolved_at|date:"M d, g:i A" }}</div>
+                    {% else %}
+                        <div>{{ r.get_status_display }} {{ r.resolved_at|date:"M d, g:i A" }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if folder == 'pending' %}
+                    <form method="post" action="{% url 'pharmacy_reservation_resolve' r.reservation_id %}" class="actions">
+                        {% csrf_token %}
+                        <button type="submit" name="decision" value="claimed" class="btn small">Claimed</button>
+                        <button type="submit" name="decision" value="unclaimed" class="btn danger small">Not claimed</button>
+                    </form>
+                    {% else %}
+                        <span class="badge {{ r.status }}">
+                            {% if r.is_auto_expired %}Unclaimed (Expired){% else %}{{ r.get_status_display }}{% endif %}
+                        </span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+        <div class="empty">
+            {% if q %}
+                No reservations match “{{ q }}” in this folder.
+            {% elif folder == 'pending' %}
+                No pending reservations right now.
+            {% elif folder == 'claimed' %}
+                No claimed reservations yet.
+            {% else %}
+                No unclaimed reservations yet.
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

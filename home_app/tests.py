@@ -1,10 +1,10 @@
-from datetime import time
+from datetime import time, timedelta
 
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from pharmacy_app.models import Inventory, OperatingHours, Pharmacy
+from pharmacy_app.models import Inventory, OperatingHours, Pharmacy, Reservation
 
 from .models import Favorite, Medicine, MedicineCategory, SearchHistory, User
 
@@ -303,3 +303,99 @@ class UserPortalTests(TestCase):
         self.assertRedirects(res_pw, reverse('user_profile'))
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('UpdatedPass789!'))
+
+    def test_guest_can_browse_medicines_and_pharmacies_without_favorites(self):
+        self.client.get(reverse('logout'))
+        SearchHistory.objects.all().delete()
+
+        browse_res = self.client.get(reverse('public_browse'), {'q': 'Biogesic'})
+        self.assertEqual(browse_res.status_code, 200)
+        self.assertContains(browse_res, 'Biogesic')
+        self.assertContains(browse_res, 'lp-nav')
+        self.assertContains(browse_res, 'lp-footer')
+        self.assertContains(browse_res, 'Log in')
+        self.assertNotContains(browse_res, '/home/favorites/toggle/')
+        self.assertEqual(SearchHistory.objects.count(), 0)
+
+        med_res = self.client.get(reverse('public_medicine_detail', args=[self.med_biogesic.pk]))
+        self.assertEqual(med_res.status_code, 200)
+        self.assertContains(med_res, 'Sunrise Pharmacy')
+        self.assertContains(med_res, 'Log in to Favorite')
+        self.assertNotContains(med_res, '/home/favorites/toggle/')
+
+        pharm_res = self.client.get(reverse('public_pharmacy_detail', args=[self.pharm_open.pk]))
+        self.assertEqual(pharm_res.status_code, 200)
+        self.assertContains(pharm_res, 'Sunrise Pharmacy')
+        self.assertContains(pharm_res, 'Log in to Favorite')
+        self.assertNotContains(pharm_res, '/home/favorites/toggle/')
+
+        # Guests are still blocked from toggling favorites directly
+        fav_attempt = self.client.post(
+            reverse('toggle_favorite', args=['medicine', self.med_biogesic.pk])
+        )
+        self.assertRedirects(fav_attempt, reverse('login'))
+
+    def test_guest_cannot_reserve_medicine(self):
+        self.client.get(reverse('logout'))
+        inv = Inventory.objects.get(pharmacy=self.pharm_open, medicine=self.med_biogesic)
+        res = self.client.post(
+            reverse('reserve_medicine', args=[inv.pk]),
+            {'quantity': 2},
+        )
+        self.assertRedirects(res, reverse('login'))
+        res_list = self.client.get(reverse('user_reservations'))
+        self.assertRedirects(res_list, reverse('login'))
+        self.assertEqual(Reservation.objects.count(), 0)
+
+    def test_logged_in_user_reserves_medicine_generates_code_and_holds_stock(self):
+        inv = Inventory.objects.get(pharmacy=self.pharm_open, medicine=self.med_biogesic)
+        initial_stock = inv.stock_quantity
+
+        # Valid reservation deducts stock and generates RS0001-style code
+        res = self.client.post(
+            reverse('reserve_medicine', args=[inv.pk]),
+            {'quantity': 5, 'next': reverse('medicine_detail', args=[self.med_biogesic.pk])},
+            follow=True,
+        )
+        self.assertEqual(res.status_code, 200)
+        reservation = Reservation.objects.get(user=self.user, inventory=inv)
+        self.assertEqual(reservation.quantity, 5)
+        self.assertEqual(reservation.status, Reservation.STATUS_PENDING)
+        self.assertRegex(reservation.reservation_code, r'^RS\d{4,}$')
+
+        inv.refresh_from_db()
+        self.assertEqual(inv.stock_quantity, initial_stock - 5)
+
+        # User can view pending reservation on My Reservations page
+        list_res = self.client.get(reverse('user_reservations'), {'folder': 'pending'})
+        self.assertContains(list_res, reservation.reservation_code)
+        self.assertContains(list_res, self.med_biogesic.medicine_name)
+
+        # Exceeding remaining stock is rejected without creating a reservation
+        over_res = self.client.post(
+            reverse('reserve_medicine', args=[inv.pk]),
+            {'quantity': inv.stock_quantity + 1},
+            follow=True,
+        )
+        self.assertEqual(over_res.status_code, 200)
+        self.assertEqual(Reservation.objects.count(), 1)
+
+        # Reserving zero or out-of-stock medicine is rejected
+        zero_res = self.client.post(reverse('reserve_medicine', args=[inv.pk]), {'quantity': 0})
+        self.assertEqual(zero_res.status_code, 302)
+        oos_inv = Inventory.objects.get(pharmacy=self.pharm_open, medicine=self.med_vitc)
+        oos_res = self.client.post(reverse('reserve_medicine', args=[oos_inv.pk]), {'quantity': 1})
+        self.assertEqual(oos_res.status_code, 302)
+        self.assertEqual(Reservation.objects.count(), 1)
+
+        # Expired pending reservation auto-moves to Unclaimed and restores stock
+        Reservation.objects.filter(pk=reservation.pk).update(
+            expires_at=timezone.now() - timedelta(hours=1)
+        )
+        expired_view = self.client.get(reverse('user_reservations'), {'folder': 'unclaimed'})
+        self.assertContains(expired_view, reservation.reservation_code)
+        reservation.refresh_from_db()
+        inv.refresh_from_db()
+        self.assertEqual(reservation.status, Reservation.STATUS_UNCLAIMED)
+        self.assertTrue(reservation.is_auto_expired)
+        self.assertEqual(inv.stock_quantity, initial_stock)

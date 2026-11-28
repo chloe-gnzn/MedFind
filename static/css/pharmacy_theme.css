@@ -259,7 +259,15 @@
     -5px -5px 9px rgba(255, 255, 255, 0.95) inset,
     0 0 0 2px rgba(117, 130, 191, 0.55);
 }
-.pharmacy-page select.form-input { padding-right: 12px; cursor: pointer; }
+.pharmacy-page select.form-input {
+  padding-right: 38px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 4.5 5-4.5' fill='none' stroke='%23212F68' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
 .pharmacy-page .form-input[disabled] { opacity: 0.65; cursor: not-allowed; }
 .pharmacy-page input[type="file"].form-input { height: auto; padding: 10px 14px; font-size: 13px; }
 .pharmacy-page input[type="file"]::file-selector-button {
@@ -382,11 +390,16 @@
 .pp-mini-input.stock { width: 64px; }
 .pp-mini-select {
   height: 32px;
-  padding: 0 10px;
+  padding: 0 30px 0 10px;
   font-family: inherit;
   font-size: 12px;
   color: var(--hm-navy);
-  background: var(--hm-surface-inner);
+  background-color: var(--hm-surface-inner);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 4.5 5-4.5' fill='none' stroke='%23212F68' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  appearance: none;
+  -webkit-appearance: none;
   border: 0;
   border-radius: 10px;
   outline: none;
@@ -398,6 +411,20 @@
 
 .pp-badge-open   { color: #178A1C !important; }
 .pp-badge-closed { color: #B04E43 !important; }
+.pp-code-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-family: '42dot Sans', 'Alexandria', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: linear-gradient(180deg, #172B51 0%, #3a4f7e 100%);
+  border-radius: 999px;
+}
+.pharmacy-page .badge.claimed   { color: #178A1C; }
+.pharmacy-page .badge.unclaimed { color: #B04E43; }
 .pp-hours-row.is-closed td input[type="time"] {
   opacity: 0.45;
   pointer-events: none;

@@ -7,9 +7,9 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from login_app.utils import log_activity
-from medfind_project.session_auth import role_required
-from pharmacy_app.models import Inventory, OperatingHours, Pharmacy
-from pharmacy_app.utils import format_hours_span, open_now_map
+from medfind_project.session_auth import SESSION_ROLE, get_account, role_required
+from pharmacy_app.models import Inventory, OperatingHours, Pharmacy, Reservation
+from pharmacy_app.utils import create_reservation, expire_stale_reservations, format_hours_span, open_now_map
 
 from .forms import UserPasswordChangeForm, UserProfileForm
 from .models import Favorite, Medicine, MedicineCategory, SearchHistory
@@ -73,8 +73,25 @@ def home_view(request):
     })
 
 
-@role_required('user')
-def search_view(request):
+def _portal_url_names(is_guest):
+    if is_guest:
+        return {
+            'is_guest': True,
+            'base_template': 'public_browse_base.html',
+            'browse_url_name': 'public_browse',
+            'med_detail_url_name': 'public_medicine_detail',
+            'pharm_detail_url_name': 'public_pharmacy_detail',
+        }
+    return {
+        'is_guest': False,
+        'base_template': 'user_base.html',
+        'browse_url_name': 'search',
+        'med_detail_url_name': 'medicine_detail',
+        'pharm_detail_url_name': 'pharmacy_detail',
+    }
+
+
+def _build_search_context(request, user=None):
     q = request.GET.get('q', '').strip()
     category_id = request.GET.get('category', '').strip()
     med_form = request.GET.get('form', '').strip()
@@ -133,15 +150,19 @@ def search_view(request):
             p for p in pharmacies
             if q_lower in p.business_name.lower() or q_lower in p.address.lower()
         ]
-        # Remember what the user searched for (skip an immediate repeat)
-        last = SearchHistory.objects.filter(user=request.account).first()
-        if last is None or last.search_term.lower() != q_lower:
-            SearchHistory.objects.create(user=request.account, search_term=q[:255])
+        if user is not None:
+            last = SearchHistory.objects.filter(user=user).first()
+            if last is None or last.search_term.lower() != q_lower:
+                SearchHistory.objects.create(user=user, search_term=q[:255])
 
     if open_now_only:
         pharmacies = [p for p in pharmacies if p.open_now]
 
-    fav_medicine_ids, fav_pharmacy_ids = _user_favorite_ids(request.account)
+    if user is not None:
+        fav_medicine_ids, fav_pharmacy_ids = _user_favorite_ids(user)
+    else:
+        fav_medicine_ids, fav_pharmacy_ids = set(), set()
+
     medicine_forms = (
         Medicine.objects.exclude(form='')
         .values_list('form', flat=True)
@@ -149,7 +170,7 @@ def search_view(request):
         .order_by('form')
     )
 
-    return render(request, 'home_template/search.html', {
+    context = {
         'q': q,
         'category_id': category_id,
         'selected_category': selected_category,
@@ -163,11 +184,27 @@ def search_view(request):
         'pharmacies': pharmacies,
         'fav_medicine_ids': fav_medicine_ids,
         'fav_pharmacy_ids': fav_pharmacy_ids,
-    })
+    }
+    context.update(_portal_url_names(user is None))
+    return context
 
 
 @role_required('user')
-def medicine_detail_view(request, medicine_id):
+def search_view(request):
+    return render(request, 'home_template/search.html', _build_search_context(request, user=request.account))
+
+
+def public_browse_view(request):
+    """Allow non-logged-in visitors to browse medicines and verified pharmacies without favorites."""
+    if get_account(request) and request.session.get(SESSION_ROLE) == 'user':
+        qs = request.META.get('QUERY_STRING', '')
+        target = '/home/search/' + (f'?{qs}' if qs else '')
+        return redirect(target)
+    return render(request, 'home_template/search.html', _build_search_context(request, user=None))
+
+
+def _build_medicine_detail_context(request, medicine_id, user=None):
+    expire_stale_reservations()
     medicine = get_object_or_404(Medicine.objects.select_related('category'), pk=medicine_id)
     in_stock_only = request.GET.get('in_stock') == '1'
     open_now_only = request.GET.get('open_now') == '1'
@@ -179,7 +216,7 @@ def medicine_detail_view(request, medicine_id):
         .order_by('price')
     )
     open_map = open_now_map([l.pharmacy_id for l in listings])
-    _, fav_pharmacy_ids = _user_favorite_ids(request.account)
+    _, fav_pharmacy_ids = _user_favorite_ids(user) if user is not None else (set(), set())
     for listing in listings:
         listing.open_now = open_map[listing.pharmacy_id]
         listing.is_pharmacy_favorite = listing.pharmacy_id in fav_pharmacy_ids
@@ -201,23 +238,48 @@ def medicine_detail_view(request, medicine_id):
         (l.price for l in listings if l.availability_status in IN_STOCK_STATUSES),
         default=None,
     )
+    is_favorite = (
+        Favorite.objects.filter(user=user, medicine=medicine, favorite_type='medicine').exists()
+        if user is not None else False
+    )
 
-    return render(request, 'home_template/medicine_detail.html', {
+    context = {
         'medicine': medicine,
         'listings': listings,
         'best_price': best_price,
         'in_stock_only': in_stock_only,
         'open_now_only': open_now_only,
         'sort': sort,
-        'is_favorite': Favorite.objects.filter(
-            user=request.account, medicine=medicine, favorite_type='medicine').exists(),
-    })
+        'is_favorite': is_favorite,
+    }
+    context.update(_portal_url_names(user is None))
+    return context
 
 
 @role_required('user')
-def pharmacy_detail_view(request, pharmacy_id):
+def medicine_detail_view(request, medicine_id):
+    return render(
+        request,
+        'home_template/medicine_detail.html',
+        _build_medicine_detail_context(request, medicine_id, user=request.account),
+    )
+
+
+def public_medicine_detail_view(request, medicine_id):
+    """Public medicine detail view for non-logged-in visitors (no favorites)."""
+    if get_account(request) and request.session.get(SESSION_ROLE) == 'user':
+        return redirect('medicine_detail', medicine_id=medicine_id)
+    return render(
+        request,
+        'home_template/medicine_detail.html',
+        _build_medicine_detail_context(request, medicine_id, user=None),
+    )
+
+
+def _build_pharmacy_detail_context(request, pharmacy_id, user=None):
     pharmacy = get_object_or_404(
         Pharmacy, pk=pharmacy_id, verification_status='approved', is_active=True)
+    expire_stale_reservations(pharmacy=pharmacy)
     hours = {h.days_of_week: h for h in OperatingHours.objects.filter(pharmacy=pharmacy)}
     hour_rows = [{'label': label, 'hours': hours.get(day)} for day, label in OperatingHours.DAY_CHOICES]
 
@@ -241,12 +303,16 @@ def pharmacy_detail_view(request, pharmacy_id):
     elif status in ('available', 'low_stock', 'out_of_stock'):
         items = items.filter(availability_status=status)
 
-    fav_medicine_ids, _ = _user_favorite_ids(request.account)
+    fav_medicine_ids, _ = _user_favorite_ids(user) if user is not None else (set(), set())
     categories = MedicineCategory.objects.filter(
         medicines__inventory_items__pharmacy=pharmacy
     ).distinct().order_by('category_name')
+    is_favorite = (
+        Favorite.objects.filter(user=user, pharmacy=pharmacy, favorite_type='pharmacy').exists()
+        if user is not None else False
+    )
 
-    return render(request, 'home_template/pharmacy_detail.html', {
+    context = {
         'pharmacy': pharmacy,
         'hour_rows': hour_rows,
         'items': items,
@@ -256,9 +322,30 @@ def pharmacy_detail_view(request, pharmacy_id):
         'categories': categories,
         'fav_medicine_ids': fav_medicine_ids,
         'open_now': open_now_map([pharmacy.pk])[pharmacy.pk],
-        'is_favorite': Favorite.objects.filter(
-            user=request.account, pharmacy=pharmacy, favorite_type='pharmacy').exists(),
-    })
+        'is_favorite': is_favorite,
+    }
+    context.update(_portal_url_names(user is None))
+    return context
+
+
+@role_required('user')
+def pharmacy_detail_view(request, pharmacy_id):
+    return render(
+        request,
+        'home_template/pharmacy_detail.html',
+        _build_pharmacy_detail_context(request, pharmacy_id, user=request.account),
+    )
+
+
+def public_pharmacy_detail_view(request, pharmacy_id):
+    """Public pharmacy detail view for non-logged-in visitors (no favorites)."""
+    if get_account(request) and request.session.get(SESSION_ROLE) == 'user':
+        return redirect('pharmacy_detail', pharmacy_id=pharmacy_id)
+    return render(
+        request,
+        'home_template/pharmacy_detail.html',
+        _build_pharmacy_detail_context(request, pharmacy_id, user=None),
+    )
 
 
 @role_required('user')
@@ -390,4 +477,69 @@ def profile_view(request):
         'password_form': password_form,
         'favorite_count': Favorite.objects.filter(user=request.account).count(),
         'search_count': SearchHistory.objects.filter(user=request.account).count(),
+    })
+
+
+@role_required('user')
+@require_POST
+def reserve_medicine_view(request, inventory_id):
+    raw_qty = (request.POST.get('quantity') or '').strip()
+    next_url = request.POST.get('next', '')
+    safe_next = (
+        next_url if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()})
+        else ''
+    )
+
+    try:
+        quantity = int(raw_qty)
+    except ValueError:
+        messages.error(request, 'Please enter a valid whole number quantity.')
+        return redirect(safe_next or 'search')
+
+    try:
+        reservation = create_reservation(request.account, inventory_id, quantity)
+    except ValueError as err:
+        messages.error(request, str(err))
+        return redirect(safe_next or 'search')
+
+    log_activity(
+        'user',
+        request.account.pk,
+        'reserve_create',
+        f'Reserved {reservation.quantity}x {reservation.medicine.medicine_name} '
+        f'at {reservation.pharmacy.business_name} ({reservation.reservation_code}).',
+    )
+    messages.success(
+        request,
+        f'Reserved {reservation.quantity}× {reservation.medicine.medicine_name}! '
+        f'Code: {reservation.reservation_code} (valid for 24 hours).',
+    )
+    return redirect('user_reservations')
+
+
+@role_required('user')
+def reservations_view(request):
+    expire_stale_reservations(user=request.account)
+    folder = request.GET.get('folder', 'all').strip()
+
+    all_rows = (
+        Reservation.objects.filter(user=request.account)
+        .select_related('pharmacy', 'medicine', 'medicine__category')
+    )
+    counts = {
+        'all': all_rows.count(),
+        'pending': all_rows.filter(status=Reservation.STATUS_PENDING).count(),
+        'claimed': all_rows.filter(status=Reservation.STATUS_CLAIMED).count(),
+        'unclaimed': all_rows.filter(status=Reservation.STATUS_UNCLAIMED).count(),
+    }
+    if folder in ('pending', 'claimed', 'unclaimed'):
+        rows = all_rows.filter(status=folder)
+    else:
+        folder = 'all'
+        rows = all_rows
+
+    return render(request, 'home_template/reservations.html', {
+        'reservations': rows,
+        'folder': folder,
+        'counts': counts,
     })

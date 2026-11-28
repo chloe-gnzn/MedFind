@@ -1,0 +1,73 @@
+{% extends 'user_base.html' %}
+{% block title %}My Reservations{% endblock %}
+{% block scroll_class %}sr-scroll{% endblock %}
+
+{% block top_bar %}
+<div class="sr-top">
+    <div class="sr-heading">
+        <h1 class="sr-title">My Reservations</h1>
+        <p class="sr-sub">Show your reservation ID (e.g. RS0001) at the pharmacy counter within 24 hours.</p>
+    </div>
+    <div class="actions">
+        <a href="{% url 'search' %}" class="btn">Reserve Medicine</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<nav class="sr-chips" aria-label="Filter reservations">
+    <a class="sr-chip {% if folder == 'all' %}active{% endif %}" href="{% url 'user_reservations' %}">All ({{ counts.all }})</a>
+    <a class="sr-chip {% if folder == 'pending' %}active{% endif %}" href="{% url 'user_reservations' %}?folder=pending">Pending ({{ counts.pending }})</a>
+    <a class="sr-chip {% if folder == 'claimed' %}active{% endif %}" href="{% url 'user_reservations' %}?folder=claimed">Claimed ({{ counts.claimed }})</a>
+    <a class="sr-chip {% if folder == 'unclaimed' %}active{% endif %}" href="{% url 'user_reservations' %}?folder=unclaimed">Unclaimed ({{ counts.unclaimed }})</a>
+</nav>
+
+<section class="sr-card">
+    <h2 class="sr-card-title">Reservations ({{ reservations|length }})</h2>
+
+    <div class="sr-list">
+    {% for r in reservations %}
+        <article class="sr-row">
+            <div class="sr-row-main">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                    <span class="up-code-pill">{{ r.reservation_code }}</span>
+                    <a class="sr-row-title" href="{% url 'medicine_detail' r.medicine.medicine_id %}">{{ r.medicine.medicine_name }}</a>
+                </div>
+                <p class="sr-row-meta">
+                    {{ r.quantity }} × ₱{{ r.unit_price|floatformat:2 }} = <strong>₱{{ r.total_price|floatformat:2 }}</strong>
+                    <span class="sr-dot">·</span>
+                    <a href="{% url 'pharmacy_detail' r.pharmacy.pharmacy_id %}" style="color:inherit;text-decoration:underline;">{{ r.pharmacy.business_name }}</a>
+                    ({{ r.pharmacy.address }})
+                </p>
+                <p class="sr-row-meta">
+                    Reserved {{ r.created_at|date:"M d, Y g:i A" }}
+                    <span class="sr-dot">·</span>
+                    {% if r.status == 'pending' %}
+                        Valid until {{ r.expires_at|date:"M d, Y g:i A" }}
+                    {% elif r.is_auto_expired %}
+                        Expired after 24 hours ({{ r.resolved_at|date:"M d, Y g:i A" }})
+                    {% else %}
+                        {{ r.get_status_display }} {{ r.resolved_at|date:"M d, Y g:i A" }}
+                    {% endif %}
+                </p>
+            </div>
+            <div class="sr-row-side">
+                {% if r.status == 'pending' %}
+                    <span class="badge low_stock">Pending (24h)</span>
+                {% elif r.status == 'claimed' %}
+                    <span class="badge available">Claimed</span>
+                {% else %}
+                    <span class="badge out_of_stock">Unclaimed</span>
+                {% endif %}
+                <a class="sr-view" href="{% url 'pharmacy_detail' r.pharmacy.pharmacy_id %}">Pharmacy</a>
+            </div>
+        </article>
+    {% empty %}
+        <div class="sr-empty">
+            <strong>No reservations here</strong>
+            <span>Search for an in-stock medicine and enter the quantity you want to reserve.</span>
+        </div>
+    {% endfor %}
+    </div>
+</section>
+{% endblock %}

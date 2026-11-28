@@ -18,6 +18,7 @@
     <a class="lp-logo" href="#top" aria-label="MedFind home">MedFind<span>+</span></a>
     <nav class="lp-links" aria-label="Page sections">
         <a href="#top">Home</a>
+        <a href="{% url 'public_browse' %}">Browse</a>
         <a href="#about">About</a>
         <a href="#features">Features</a>
         <a href="#how-it-works">How It Works</a>
@@ -42,8 +43,8 @@
         </div>
 
         <div class="lp-hero-cta-group">
-            <a class="lp-hero-pill" href="{% url 'register' %}">Find Medicines</a>
-            <a class="lp-hero-arrow" href="{% url 'register' %}" aria-label="Get started">→</a>
+            <a class="lp-hero-pill" href="{% url 'public_browse' %}">Browse Medicines</a>
+            <a class="lp-hero-arrow" href="{% url 'public_browse' %}" aria-label="Browse medicines and pharmacies">→</a>
         </div>
     </section>
 
@@ -144,7 +145,7 @@
             <h4>Product</h4>
             <a href="#how-it-works">How it works</a>
             <a href="#features">Features</a>
-            <a href="{% url 'login' %}">Browse medicines</a>
+            <a href="{% url 'public_browse' %}">Browse medicines</a>
             <a href="{% url 'login' %}">User log in</a>
             <a href="{% url 'register' %}">User sign up</a>
 

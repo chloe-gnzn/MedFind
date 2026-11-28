@@ -1,9 +1,12 @@
 """
 ERD entities in this app: Pharmacy, Inventory, Operating_hours, Pharmacy_verification
 """
+from datetime import timedelta
+
 from django.core.files.storage import default_storage
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 
 from medfind_project.session_auth import PasswordMixin
 
@@ -161,3 +164,61 @@ class PharmacyVerification(models.Model):
 
     def __str__(self):
         return f'{self.pharmacy} - {self.status}'
+
+
+class Reservation(models.Model):
+    """User medicine reservation held for 24 hours until claimed or moved to unclaimed."""
+
+    STATUS_PENDING = 'pending'
+    STATUS_CLAIMED = 'claimed'
+    STATUS_UNCLAIMED = 'unclaimed'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_CLAIMED, 'Claimed'),
+        (STATUS_UNCLAIMED, 'Unclaimed'),
+    ]
+
+    reservation_id = models.AutoField(primary_key=True)
+    reservation_code = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    user = models.ForeignKey(
+        'home_app.User', on_delete=models.CASCADE, related_name='reservations'
+    )
+    pharmacy = models.ForeignKey(
+        'pharmacy_app.Pharmacy', on_delete=models.CASCADE, related_name='reservations'
+    )
+    medicine = models.ForeignKey(
+        'home_app.Medicine', on_delete=models.CASCADE, related_name='reservations'
+    )
+    inventory = models.ForeignKey(
+        'pharmacy_app.Inventory', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='reservations',
+    )
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    unit_price = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    is_auto_expired = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(hours=24)
+        super().save(*args, **kwargs)
+        if not self.reservation_code:
+            self.reservation_code = f'RS{self.reservation_id:04d}'
+            super().save(update_fields=['reservation_code'])
+
+    @property
+    def total_price(self):
+        return self.unit_price * self.quantity
+
+    def __str__(self):
+        return f'{self.reservation_code or self.pk} - {self.medicine} ({self.quantity})'

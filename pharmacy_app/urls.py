@@ -17,6 +17,8 @@ urlpatterns = [
     path('hours/', views.hours_view, name='pharmacy_hours'),
     path('verification/', views.verification_view, name='pharmacy_verification'),
     path('verification/<int:verification_id>/cancel/', views.verification_cancel_view, name='verification_cancel'),
+    path('reservations/', views.reservations_view, name='pharmacy_reservations'),
+    path('reservations/<int:reservation_id>/resolve/', views.reservation_resolve_view, name='pharmacy_reservation_resolve'),
     path('profile/', views.profile_view, name='pharmacy_profile'),
     path('activity/', views.activity_view, name='pharmacy_activity'),
 ]
